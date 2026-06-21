@@ -29,7 +29,7 @@
     <header style="text-align:center;margin-bottom:38px;">
       <div style="font-size:13px;letter-spacing:8px;color:#9b9081;font-weight:500;margin-bottom:15px;padding-left:8px;">图 文 笔 记 生 成 器</div>
       <h1 style="font-size:40px;font-weight:900;letter-spacing:1px;margin:0 0 12px;line-height:1.2;">小红书 · 精致图文生成</h1>
-      <p style="font-size:15px;color:#8a8073;margin:0;letter-spacing:1px;">粘贴长文，自动排版成封面 + 内容长图，一键导出 1080 × 1440 高清图片</p>
+      <p style="font-size:15px;color:#8a8073;margin:0;letter-spacing:1px;">粘贴长文，自动排版成封面 + 内容长图，一键导出 {{dimText}} 高清图片</p>
     </header>
 
     <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;">
@@ -84,6 +84,15 @@
             <button onClick="{{decPages}}" style="width:40px;height:40px;border:none;background:transparent;font-size:22px;color:#8a8073;cursor:pointer;line-height:1;">−</button>
             <span style="width:42px;text-align:center;font-size:18px;font-weight:700;color:#33302a;">{{targetPages}}</span>
             <button onClick="{{incPages}}" style="width:40px;height:40px;border:none;background:transparent;font-size:20px;color:#8a8073;cursor:pointer;line-height:1;">+</button>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:10px;">图片比例</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <sc-for list="{{ratios}}" as="rt" hint-placeholder-count="2">
+              <div onClick="{{rt.pick}}" style="padding:9px 20px;border-radius:11px;border:2px solid {{rt.ring}};background:{{rt.bg}};color:{{rt.col}};font-size:15px;cursor:pointer;">{{rt.name}}</div>
+            </sc-for>
           </div>
         </div>
 
@@ -167,7 +176,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding:0 2px;">
           <div style="display:flex;align-items:baseline;gap:12px;">
             <span style="font-size:20px;font-weight:900;letter-spacing:1px;">成图预览</span>
-            <span style="font-size:14px;color:#9b9081;">共 {{pageCount}} 张 · 1080×1440</span>
+            <span style="font-size:14px;color:#9b9081;">共 {{pageCount}} 张 · {{dimLabel}}</span>
           </div>
           <button onClick="{{exportAll}}" style="padding:11px 24px;background:#fff;color:#7a5a36;border:1.5px solid #c4a981;border-radius:11px;font-size:14px;font-weight:700;letter-spacing:3px;cursor:pointer;">保 存 全 部</button>
         </div>
@@ -175,18 +184,18 @@
         <div style="display:flex;flex-wrap:wrap;gap:30px;">
           <sc-for list="{{pages}}" as="page" hint-placeholder-count="5">
             <div style="display:flex;flex-direction:column;align-items:center;gap:13px;">
-              <div style="width:300px;height:400px;overflow:hidden;border-radius:{{cardRadius}};box-shadow:0 16px 38px rgba(60,46,28,0.2);position:relative;background:{{page.t.bg}};">
+              <div style="width:300px;height:{{page.previewH}}px;overflow:hidden;border-radius:{{cardRadius}};box-shadow:0 16px 38px rgba(60,46,28,0.2);position:relative;background:{{page.t.bg}};">
 
                 <!-- COVER -->
                 <sc-if value="{{page.isCover}}" hint-placeholder-val="{{true}}">
                   <sc-if value="{{page.isCard}}" hint-placeholder-val="{{true}}">
-                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1440px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;overflow:hidden;"><div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:{{page.cardH}}px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;overflow:hidden;"><div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
                     <div style="display:flex;align-items:center;gap:16px;background:{{page.t.band}};padding:38px 92px;font-size:30px;color:{{page.t.title}};font-weight:500;letter-spacing:1px;">
                       <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="{{page.t.title}}" stroke-width="2.4"/><path d="M18 10 V18 L24 22" stroke="{{page.t.title}}" stroke-width="2.4" stroke-linecap="round"/></svg>
                       <span>全文 {{page.wordCount}} 字 · 阅读约 {{page.readMin}} 分钟</span>
                     </div>
                     <div style="flex:1;display:flex;flex-direction:column;padding:64px 92px 78px;">
-                      <div style="width:100%;height:528px;border-radius:26px;overflow:hidden;position:relative;background:{{page.t.soft}};flex:none;">
+                      <div style="width:100%;height:{{page.heroCardH}}px;border-radius:26px;overflow:hidden;position:relative;background:{{page.t.soft}};flex:none;">
                         <sc-if value="{{page.hasHero}}" hint-placeholder-val="{{false}}">{{page.heroEl}}</sc-if>
                         <sc-if value="{{page.noHero}}" hint-placeholder-val="{{true}}">
                           <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;border:2px dashed {{page.t.line}};border-radius:26px;">
@@ -212,7 +221,7 @@
                   </sc-if>
 
                   <sc-if value="{{page.isFull}}" hint-placeholder-val="{{false}}">
-                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1440px;transform:scale(0.277778);transform-origin:top left;background:{{page.t.bg}};color:#fff;font-family:{{page.fontBody}};overflow:hidden;">
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:{{page.cardH}}px;transform:scale(0.277778);transform-origin:top left;background:{{page.t.bg}};color:#fff;font-family:{{page.fontBody}};overflow:hidden;">
                     <sc-if value="{{page.hasHero}}" hint-placeholder-val="{{false}}"><div style="position:absolute;inset:0;">{{page.heroEl}}</div></sc-if>
                     <sc-if value="{{page.noHero}}" hint-placeholder-val="{{true}}"><div style="position:absolute;inset:0;background:linear-gradient(160deg,#3b3b46,#16161c);"></div></sc-if>
                     <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,6,4,0.40) 0%,rgba(8,6,4,0.05) 26%,rgba(8,6,4,0.32) 60%,rgba(8,6,4,0.84) 100%);"></div>
@@ -237,9 +246,9 @@
                   </sc-if>
 
                   <sc-if value="{{page.isBlend}}" hint-placeholder-val="{{false}}">
-                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1440px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;overflow:hidden;">
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:{{page.cardH}}px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;overflow:hidden;">
                     <div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
-                    <div style="position:relative;height:800px;flex:none;overflow:hidden;">
+                    <div style="position:relative;height:{{page.heroBlendH}}px;flex:none;overflow:hidden;">
                       <sc-if value="{{page.hasHero}}" hint-placeholder-val="{{false}}">{{page.heroEl}}</sc-if>
                       <sc-if value="{{page.noHero}}" hint-placeholder-val="{{true}}"><div style="width:100%;height:100%;background:{{page.t.soft}};display:flex;align-items:center;justify-content:center;color:{{page.t.sub}};font-size:30px;letter-spacing:3px;">封面配图</div></sc-if>
                       <div style="position:absolute;left:0;right:0;bottom:0;height:340px;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,{{page.t.bg2}} 100%);"></div>
@@ -265,7 +274,7 @@
 
                 <!-- CONTENT -->
                 <sc-if value="{{page.isContent}}" hint-placeholder-val="{{false}}">
-                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1440px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;padding:88px 88px 80px;overflow:hidden;"><div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:{{page.cardH}}px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;padding:88px 88px 80px;overflow:hidden;"><div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
                     <div style="position:absolute;top:30px;right:60px;font-size:340px;font-weight:900;line-height:1;color:{{page.t.title}};opacity:0.06;font-family:'Noto Serif SC',serif;">{{page.num}}</div>
                     <div style="position:relative;display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:28px;color:{{page.t.sub}};letter-spacing:3px;">
                       <span style="display:flex;align-items:center;gap:15px;min-width:0;flex:1;"><span style="width:34px;height:3px;border-radius:2px;background:{{page.t.accent}};display:inline-block;flex:none;"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{page.brand}}</span></span>
@@ -373,6 +382,7 @@ class Component extends DCLogic {
     bodyFontIndex: 0,
     customColor: null,
     customBg: null,
+    ratioIndex: 0,
     patternIndex: 1,
     coverLayout: 0,
     pages: [],
@@ -406,6 +416,12 @@ class Component extends DCLogic {
       band: this.mix(accent, bg, 0.84),
       shadow: 'rgba(' + this.hex2rgb(accent).join(',') + ',0.3)',
     }));
+  }
+  getRatios() {
+    return [
+      { name: '标准 3:4', w: 1080, h: 1440 },
+      { name: '长文 3:5', w: 1080, h: 1800 },
+    ];
   }
 
   pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -576,7 +592,8 @@ class Component extends DCLogic {
     // density — measure each block's REAL rendered height (px) in a hidden node
     // at the true 1080px scale, so pages fill evenly with no overflow / dead space.
     const font = this.curFont();
-    const AVAIL = 1070; // usable vertical space for blocks, between header & footer (3:4 card = 1440 tall)
+    const cardH = (this.getRatios()[S.ratioIndex] || this.getRatios()[0]).h;
+    const AVAIL = cardH - 370; // usable vertical space for blocks, between header & footer
     const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const MT = { heading: 14, bullets: 6, para: 0 };
     const MB = { heading: 28, bullets: 34, para: 34 };
@@ -700,7 +717,8 @@ class Component extends DCLogic {
     holder.appendChild(clone);
     document.body.appendChild(holder);
     try {
-      const canvas = await window.html2canvas(clone, { width: 1080, height: 1440, scale: 2, backgroundColor: this.curTheme().bg, useCORS: true, logging: false });
+      const ch = (this.getRatios()[this.state.ratioIndex] || this.getRatios()[0]).h;
+      const canvas = await window.html2canvas(clone, { width: 1080, height: ch, scale: 2, backgroundColor: this.curTheme().bg, useCORS: true, logging: false });
       const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = url; a.download = 'xiaohongshu-' + this.pad(idx + 1) + '.png';
@@ -721,8 +739,10 @@ class Component extends DCLogic {
     const S = this.state;
     const hero = S.heroImg;
     const pat = this.patternStyle(S.patternIndex, theme.line);
+    const ratio = this.getRatios()[S.ratioIndex] || this.getRatios()[0];
+    const cardH = ratio.h, previewH = Math.round(ratio.h * 0.277778), heroCardH = Math.round(ratio.h * 0.366), heroBlendH = Math.round(ratio.h * 0.5556);
     const pages = (S.pages || []).map((p, i) => {
-      const o = { ...p, t: theme, fontTitle: font.title, fontBody: font.body, titleWeight: font.titleWeight, gridBg: pat.img, gridSize: pat.size, gridOpacity: pat.op, _idx: i, cardRef: (el) => { this._refs[i] = el; }, exportSelf: () => this.exportCard(i) };
+      const o = { ...p, t: theme, fontTitle: font.title, fontBody: font.body, titleWeight: font.titleWeight, cardH, previewH, heroCardH, heroBlendH, gridBg: pat.img, gridSize: pat.size, gridOpacity: pat.op, _idx: i, cardRef: (el) => { this._refs[i] = el; }, exportSelf: () => this.exportCard(i) };
       if (o.isCover) { o.hero = hero; o.hasHero = !!hero; o.noHero = !hero; o.heroEl = hero ? React.createElement('div', { style: { width: '100%', height: '100%', backgroundImage: 'url("' + hero + '")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } }) : null; o.isCard = S.coverLayout === 0; o.isFull = S.coverLayout === 1; o.isBlend = S.coverLayout === 2; o.titleRuns = (p.titleRuns || []).map(r => ({ t: r.t, color: r.hi ? theme.accent : theme.title, fullColor: r.hi ? theme.accent : '#ffffff' })); }
       return o;
     });
@@ -758,6 +778,13 @@ class Component extends DCLogic {
       bg: i === S.coverLayout ? theme.soft : '#FCFAF4',
       col: i === S.coverLayout ? '#7a5a36' : '#8a8073',
       pick: () => this.setState({ coverLayout: i }, () => this.regen()),
+    }));
+    const ratios = this.getRatios().map((r, i) => ({
+      name: r.name, i,
+      ring: i === S.ratioIndex ? theme.title : 'rgba(0,0,0,0.12)',
+      bg: i === S.ratioIndex ? theme.soft : '#FCFAF4',
+      col: i === S.ratioIndex ? '#7a5a36' : '#8a8073',
+      pick: () => this.setState({ ratioIndex: i }, () => this.regen()),
     }));
     const rounded = this.props.cardCorners === '微圆角';
     const covers = [];
@@ -799,6 +826,9 @@ class Component extends DCLogic {
       customBgLabel: S.customBg ? '#7a5a36' : '#a89f90',
       onCustomBg: (e) => this.setState({ customBg: e.target.value }, () => this.regen()),
       pageCount: pages.length,
+      ratios,
+      dimLabel: ratio.w + '×' + ratio.h,
+      dimText: ratio.w + ' × ' + ratio.h,
       cardRadius: rounded ? '18px' : '0px',
     };
   }
