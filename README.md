@@ -23,7 +23,7 @@ npx http-server -p 8000
 ```
 打开终端里给出的地址即可。
 
-> 入口文件是 `index.html`（与 `小红书图文生成器.dc.html` 内容相同）。
+> 入口文件是 `index.html`。
 > 字体（思源黑/宋、站酷系列等）和导出库 html2canvas 从 CDN 加载，运行时需联网。
 
 ## 上传到你的 GitHub
@@ -49,7 +49,6 @@ https://shodan1q.github.io/<仓库名>/
 ## 目录结构
 ```
 index.html                 # 入口（静态页面）
-小红书图文生成器.dc.html    # 同一份设计源文件
 support.js                 # 运行时（必须与 index.html 同目录）
 covers/                    # 20 张内置封面图 photo-01.jpg … photo-20.jpg
 ```
