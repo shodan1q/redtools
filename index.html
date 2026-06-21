@@ -723,7 +723,7 @@ class Component extends DCLogic {
     const pat = this.patternStyle(S.patternIndex, theme.line);
     const pages = (S.pages || []).map((p, i) => {
       const o = { ...p, t: theme, fontTitle: font.title, fontBody: font.body, titleWeight: font.titleWeight, gridBg: pat.img, gridSize: pat.size, gridOpacity: pat.op, _idx: i, cardRef: (el) => { this._refs[i] = el; }, exportSelf: () => this.exportCard(i) };
-      if (o.isCover) { o.hero = hero; o.hasHero = !!hero; o.noHero = !hero; o.heroEl = hero ? React.createElement('img', { src: hero, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } }) : null; o.isCard = S.coverLayout === 0; o.isFull = S.coverLayout === 1; o.isBlend = S.coverLayout === 2; o.titleRuns = (p.titleRuns || []).map(r => ({ t: r.t, color: r.hi ? theme.accent : theme.title, fullColor: r.hi ? theme.accent : '#ffffff' })); }
+      if (o.isCover) { o.hero = hero; o.hasHero = !!hero; o.noHero = !hero; o.heroEl = hero ? React.createElement('div', { style: { width: '100%', height: '100%', backgroundImage: 'url("' + hero + '")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } }) : null; o.isCard = S.coverLayout === 0; o.isFull = S.coverLayout === 1; o.isBlend = S.coverLayout === 2; o.titleRuns = (p.titleRuns || []).map(r => ({ t: r.t, color: r.hi ? theme.accent : theme.title, fullColor: r.hi ? theme.accent : '#ffffff' })); }
       return o;
     });
     const themes = this.getThemes().map((t, i) => ({
