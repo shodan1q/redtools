@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=Long+Cang&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  textarea,input,button,label{font-family:'Noto Sans SC',sans-serif;}
+  textarea:focus,input:focus{outline:none;border-color:#C26B2E;}
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:#cbbb9d;border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E9E3D6;font-family:'Noto Sans SC',sans-serif;color:#2c2823;padding:42px 26px 72px;">
+  <div style="max-width:1200px;margin:0 auto;">
+
+    <header style="text-align:center;margin-bottom:38px;">
+      <div style="font-size:13px;letter-spacing:8px;color:#9b9081;font-weight:500;margin-bottom:15px;padding-left:8px;">图 文 笔 记 生 成 器</div>
+      <h1 style="font-size:40px;font-weight:900;letter-spacing:1px;margin:0 0 12px;line-height:1.2;">小红书 · 精致图文生成</h1>
+      <p style="font-size:15px;color:#8a8073;margin:0;letter-spacing:1px;">粘贴长文，自动排版成封面 + 内容长图，一键导出 1080 × 1800 高清图片</p>
+    </header>
+
+    <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;">
+
+      <!-- EDITOR -->
+      <section style="flex:1 1 360px;max-width:438px;background:#F5F1E8;border:1px solid #DBD0BC;border-radius:18px;padding:28px;box-shadow:0 12px 34px rgba(74,58,36,0.08);">
+
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+          <label style="font-size:12px;letter-spacing:4px;color:#9b9081;font-weight:700;">正 文</label>
+          <span style="display:flex;gap:16px;font-size:13px;">
+            <span onClick="{{loadSample}}" style="color:#C26B2E;cursor:pointer;font-weight:500;">示例</span>
+            <span onClick="{{clearText}}" style="color:#b0a89a;cursor:pointer;">清空</span>
+          </span>
+        </div>
+        <textarea value="{{raw}}" onChange="{{onRaw}}" placeholder="第一行作标题。正文换行分段，「一、」「1.」识别小标题，「- 」识别要点，**关键词** 或 【关键词】 高亮强调。" style="width:100%;height:264px;resize:vertical;background:#FCFAF4;border:1px solid #D8CDB9;border-radius:12px;padding:16px 17px;font-size:15px;line-height:1.75;color:#33302a;letter-spacing:0.3px;"></textarea>
+
+        <div style="margin-top:20px;">
+          <label style="display:block;font-size:12px;letter-spacing:4px;color:#9b9081;font-weight:700;margin-bottom:10px;">封面配图（可选）</label>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <label style="flex:1;text-align:center;padding:13px;background:#FCFAF4;border:1.5px dashed #cdb795;border-radius:11px;font-size:14px;color:#8a7355;cursor:pointer;letter-spacing:1px;">
+              <input type="file" accept="image/*" onChange="{{onHero}}" style="display:none;">{{heroLabel}}
+            </label>
+            <sc-if value="{{hasHero}}" hint-placeholder-val="{{false}}">
+              <span onClick="{{clearHero}}" style="font-size:13px;color:#b0a89a;cursor:pointer;padding:0 4px;">移除</span>
+            </sc-if>
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:#a89f90;letter-spacing:1px;margin-bottom:9px;">科技风图库 · 点击套用</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+            <sc-for list="{{covers}}" as="cov" hint-placeholder-count="10">
+              <div onClick="{{cov.pick}}" style="height:44px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid {{cov.ring}};box-shadow:0 2px 6px rgba(40,30,18,0.18);">{{cov.thumbEl}}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:10px;">封面版式</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <sc-for list="{{coverLayouts}}" as="cl" hint-placeholder-count="3">
+              <div onClick="{{cl.pick}}" style="padding:9px 20px;border-radius:11px;border:2px solid {{cl.ring}};background:{{cl.bg}};color:{{cl.col}};font-size:15px;cursor:pointer;">{{cl.name}}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:8px;">署名</label>
+          <input value="{{signature}}" onChange="{{onSig}}" placeholder="AgentOPC" style="width:100%;background:#FCFAF4;border:1px solid #D8CDB9;border-radius:10px;padding:11px 13px;font-size:15px;color:#33302a;">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;">
+          <label style="font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;">图片张数</label>
+          <div style="display:flex;align-items:center;border:1px solid #D8CDB9;border-radius:10px;overflow:hidden;background:#FCFAF4;">
+            <button onClick="{{decPages}}" style="width:40px;height:40px;border:none;background:transparent;font-size:22px;color:#8a8073;cursor:pointer;line-height:1;">−</button>
+            <span style="width:42px;text-align:center;font-size:18px;font-weight:700;color:#33302a;">{{targetPages}}</span>
+            <button onClick="{{incPages}}" style="width:40px;height:40px;border:none;background:transparent;font-size:20px;color:#8a8073;cursor:pointer;line-height:1;">+</button>
+          </div>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label style="font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;">结尾寄语页</label>
+            <div onClick="{{toggleClosing}}" style="width:62px;height:32px;border-radius:16px;background:{{closingBg}};position:relative;cursor:pointer;">
+              <div style="position:absolute;top:3px;left:{{closingKnob}};width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,0.22);"></div>
+            </div>
+          </div>
+          <sc-if value="{{closingOn}}" hint-placeholder-val="{{true}}">
+            <input value="{{dedication}}" onChange="{{onDedication}}" placeholder="自定义寄语 · 留空则取正文最后一句" style="width:100%;margin-top:12px;background:#FCFAF4;border:1px solid #D8CDB9;border-radius:10px;padding:11px 13px;font-size:14px;color:#33302a;">
+          </sc-if>
+        </div>
+
+        <div style="margin-top:24px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:14px;">主题配色</label>
+          <div style="display:flex;gap:13px;flex-wrap:wrap;">
+            <sc-for list="{{themes}}" as="sw" hint-placeholder-count="5">
+              <div onClick="{{sw.pick}}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;">
+                <div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(150deg,{{sw.bg}},{{sw.bg2}});border:2px solid {{sw.ringColor}};display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(74,58,36,0.12);">
+                  <div style="width:20px;height:20px;border-radius:7px;background:{{sw.title}};"></div>
+                </div>
+                <span style="font-size:11px;color:{{sw.labelColor}};letter-spacing:0.5px;">{{sw.name}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:14px;">主色</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <div onClick="{{resetColor}}" style="height:30px;padding:0 13px;border-radius:15px;border:2px solid {{resetRing}};display:flex;align-items:center;font-size:12px;color:#8a8073;cursor:pointer;">跟随主题</div>
+            <sc-for list="{{palette}}" as="pc" hint-placeholder-count="16">
+              <div onClick="{{pc.pick}}" style="width:30px;height:30px;border-radius:50%;background:{{pc.c}};border:2px solid {{pc.ring}};cursor:pointer;box-shadow:0 2px 5px rgba(40,30,18,0.18);"></div>
+            </sc-for>
+            <label style="width:30px;height:30px;border-radius:50%;background:conic-gradient(from 90deg,#e2483d,#e8a13c,#4caf6e,#3e8fd0,#7b5bd0,#d05a8c,#e2483d);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #d8cdb9,0 2px 5px rgba(40,30,18,0.18);position:relative;overflow:hidden;">
+              <input type="color" onChange="{{onCustomColor}}" style="position:absolute;inset:-6px;opacity:0;cursor:pointer;">
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:14px;">底纹</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <sc-for list="{{patterns}}" as="pt" hint-placeholder-count="7">
+              <div onClick="{{pt.pick}}" style="padding:9px 17px;border-radius:11px;border:2px solid {{pt.ring}};background:{{pt.bg}};color:{{pt.col}};font-size:15px;cursor:pointer;">{{pt.name}}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:14px;">标题字体</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <sc-for list="{{titleFonts}}" as="ft" hint-placeholder-count="10">
+              <div onClick="{{ft.pick}}" style="padding:9px 16px;border-radius:11px;border:2px solid {{ft.ring}};background:{{ft.bg}};color:{{ft.col}};font-size:18px;cursor:pointer;font-family:{{ft.family}};">{{ft.name}}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:14px;">正文字体</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <sc-for list="{{bodyFonts}}" as="ft" hint-placeholder-count="10">
+              <div onClick="{{ft.pick}}" style="padding:9px 16px;border-radius:11px;border:2px solid {{ft.ring}};background:{{ft.bg}};color:{{ft.col}};font-size:18px;cursor:pointer;font-family:{{ft.family}};">{{ft.name}}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <button onClick="{{generate}}" style="width:100%;margin-top:28px;padding:16px;background:#C26B2E;color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:700;letter-spacing:5px;cursor:pointer;box-shadow:0 8px 18px rgba(194,107,46,0.32);">重 新 排 版</button>
+      </section>
+
+      <!-- PREVIEW -->
+      <section style="flex:2 1 580px;min-width:300px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding:0 2px;">
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <span style="font-size:20px;font-weight:900;letter-spacing:1px;">成图预览</span>
+            <span style="font-size:14px;color:#9b9081;">共 {{pageCount}} 张 · 1080×1800</span>
+          </div>
+          <button onClick="{{exportAll}}" style="padding:11px 24px;background:#fff;color:#7a5a36;border:1.5px solid #c4a981;border-radius:11px;font-size:14px;font-weight:700;letter-spacing:3px;cursor:pointer;">保 存 全 部</button>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:30px;">
+          <sc-for list="{{pages}}" as="page" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:13px;">
+              <div style="width:300px;height:500px;overflow:hidden;border-radius:{{cardRadius}};box-shadow:0 16px 38px rgba(60,46,28,0.2);position:relative;background:{{page.t.bg}};">
+
+                <!-- COVER -->
+                <sc-if value="{{page.isCover}}" hint-placeholder-val="{{true}}">
+                  <sc-if value="{{page.isCard}}" hint-placeholder-val="{{true}}">
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1800px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;overflow:hidden;"><div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
+                    <div style="display:flex;align-items:center;gap:16px;background:{{page.t.band}};padding:38px 92px;font-size:30px;color:{{page.t.title}};font-weight:500;letter-spacing:1px;">
+                      <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="{{page.t.title}}" stroke-width="2.4"/><path d="M18 10 V18 L24 22" stroke="{{page.t.title}}" stroke-width="2.4" stroke-linecap="round"/></svg>
+                      <span>全文 {{page.wordCount}} 字 · 阅读约 {{page.readMin}} 分钟</span>
+                    </div>
+                    <div style="flex:1;display:flex;flex-direction:column;padding:64px 92px 78px;">
+                      <div style="width:100%;height:660px;border-radius:26px;overflow:hidden;position:relative;background:{{page.t.soft}};flex:none;">
+                        <sc-if value="{{page.hasHero}}" hint-placeholder-val="{{false}}">{{page.heroEl}}</sc-if>
+                        <sc-if value="{{page.noHero}}" hint-placeholder-val="{{true}}">
+                          <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;border:2px dashed {{page.t.line}};border-radius:26px;">
+                            <svg width="120" height="92" viewBox="0 0 120 92" fill="none"><rect x="6" y="6" width="108" height="80" rx="10" stroke="{{page.t.sub}}" stroke-width="2.4"/><circle cx="38" cy="34" r="11" stroke="{{page.t.sub}}" stroke-width="2.4"/><path d="M14 78 L46 48 L70 68 L88 52 L106 70" stroke="{{page.t.sub}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span style="font-size:30px;color:{{page.t.sub}};letter-spacing:3px;">封面配图</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                      <div style="position:relative;margin-top:22px;height:18px;border-top:2px solid {{page.t.line}};background-image:linear-gradient(90deg,{{page.t.line}} 2px,transparent 2px);background-size:32px 18px;opacity:0.6;"></div>
+                      <div style="position:relative;margin-top:46px;font-size:118px;line-height:1.18;font-weight:{{page.titleWeight}};letter-spacing:1px;color:{{page.t.title}};font-family:{{page.fontTitle}};text-wrap:balance;">
+                        <sc-for list="{{page.titleRuns}}" as="r" hint-placeholder-count="2"><span style="color:{{r.color}};">{{r.t}}</span></sc-for>
+                      </div>
+                      <div style="margin-top:40px;display:flex;gap:26px;align-items:stretch;">
+                        <div style="width:9px;border-radius:5px;background:{{page.t.accent}};flex:none;"></div>
+                        <div style="font-size:42px;line-height:1.6;color:{{page.t.sub}};font-weight:500;">{{page.teaser}}</div>
+                      </div>
+                      <div style="flex:1;"></div>
+                      <div style="display:flex;justify-content:flex-end;align-items:center;padding-top:34px;border-top:2px solid {{page.t.line}};font-size:30px;color:{{page.t.sub}};letter-spacing:1px;">
+                        <sc-if value="{{page.hasSig}}" hint-placeholder-val="{{true}}"><span style="display:flex;align-items:center;gap:14px;"><span style="width:36px;height:3px;border-radius:2px;background:{{page.t.accent}};"></span>@{{page.signature}}</span></sc-if>
+                      </div>
+                    </div>
+                  </div>
+                  </sc-if>
+
+                  <sc-if value="{{page.isFull}}" hint-placeholder-val="{{false}}">
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1800px;transform:scale(0.277778);transform-origin:top left;background:{{page.t.bg}};color:#fff;font-family:{{page.fontBody}};overflow:hidden;">
+                    <sc-if value="{{page.hasHero}}" hint-placeholder-val="{{false}}"><div style="position:absolute;inset:0;">{{page.heroEl}}</div></sc-if>
+                    <sc-if value="{{page.noHero}}" hint-placeholder-val="{{true}}"><div style="position:absolute;inset:0;background:linear-gradient(160deg,#3b3b46,#16161c);"></div></sc-if>
+                    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,6,4,0.40) 0%,rgba(8,6,4,0.05) 26%,rgba(8,6,4,0.32) 60%,rgba(8,6,4,0.84) 100%);"></div>
+                    <div style="position:relative;height:100%;display:flex;flex-direction:column;padding:92px;box-sizing:border-box;">
+                      <div style="display:flex;align-items:center;gap:16px;font-size:30px;color:rgba(255,255,255,0.92);font-weight:500;letter-spacing:1px;">
+                        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="#ffffff" stroke-width="2.4"/><path d="M18 10 V18 L24 22" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/></svg>
+                        <span>全文 {{page.wordCount}} 字 · 阅读约 {{page.readMin}} 分钟</span>
+                      </div>
+                      <div style="flex:1;"></div>
+                      <div style="font-size:124px;line-height:1.16;font-weight:{{page.titleWeight}};letter-spacing:1px;color:#fff;font-family:{{page.fontTitle}};text-shadow:0 2px 34px rgba(0,0,0,0.45);text-wrap:balance;">
+                        <sc-for list="{{page.titleRuns}}" as="r" hint-placeholder-count="2"><span style="color:{{r.fullColor}};">{{r.t}}</span></sc-for>
+                      </div>
+                      <div style="margin-top:40px;display:flex;gap:26px;align-items:stretch;">
+                        <div style="width:9px;border-radius:5px;background:{{page.t.accent}};flex:none;"></div>
+                        <div style="font-size:42px;line-height:1.6;color:rgba(255,255,255,0.9);font-weight:500;">{{page.teaser}}</div>
+                      </div>
+                      <div style="margin-top:54px;display:flex;justify-content:flex-end;align-items:center;padding-top:34px;border-top:2px solid rgba(255,255,255,0.32);font-size:30px;color:rgba(255,255,255,0.9);letter-spacing:1px;">
+                        <sc-if value="{{page.hasSig}}" hint-placeholder-val="{{true}}"><span style="display:flex;align-items:center;gap:14px;"><span style="width:36px;height:3px;border-radius:2px;background:{{page.t.accent}};"></span>@{{page.signature}}</span></sc-if>
+                      </div>
+                    </div>
+                  </div>
+                  </sc-if>
+
+                  <sc-if value="{{page.isBlend}}" hint-placeholder-val="{{false}}">
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1800px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;overflow:hidden;">
+                    <div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
+                    <div style="position:relative;height:1000px;flex:none;overflow:hidden;">
+                      <sc-if value="{{page.hasHero}}" hint-placeholder-val="{{false}}">{{page.heroEl}}</sc-if>
+                      <sc-if value="{{page.noHero}}" hint-placeholder-val="{{true}}"><div style="width:100%;height:100%;background:{{page.t.soft}};display:flex;align-items:center;justify-content:center;color:{{page.t.sub}};font-size:30px;letter-spacing:3px;">封面配图</div></sc-if>
+                      <div style="position:absolute;left:0;right:0;bottom:0;height:340px;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,{{page.t.bg2}} 100%);"></div>
+                      <div style="position:absolute;left:0;right:0;top:0;height:150px;background:linear-gradient(to bottom,{{page.t.bg}} 0%,rgba(0,0,0,0) 100%);"></div>
+                    </div>
+                    <div style="position:relative;flex:1;display:flex;flex-direction:column;padding:0 92px 78px;margin-top:-30px;">
+                      <div style="font-size:118px;line-height:1.18;font-weight:{{page.titleWeight}};letter-spacing:1px;color:{{page.t.title}};font-family:{{page.fontTitle}};text-wrap:balance;">
+                        <sc-for list="{{page.titleRuns}}" as="r" hint-placeholder-count="2"><span style="color:{{r.color}};">{{r.t}}</span></sc-for>
+                      </div>
+                      <div style="margin-top:36px;display:flex;gap:26px;align-items:stretch;">
+                        <div style="width:9px;border-radius:5px;background:{{page.t.accent}};flex:none;"></div>
+                        <div style="font-size:42px;line-height:1.6;color:{{page.t.sub}};font-weight:500;">{{page.teaser}}</div>
+                      </div>
+                      <div style="flex:1;"></div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:30px;border-top:2px solid {{page.t.line}};font-size:28px;color:{{page.t.sub}};letter-spacing:1px;">
+                        <span>全文 {{page.wordCount}} 字 · 约 {{page.readMin}} 分钟</span>
+                        <sc-if value="{{page.hasSig}}" hint-placeholder-val="{{true}}"><span>@{{page.signature}}</span></sc-if>
+                      </div>
+                    </div>
+                  </div>
+                  </sc-if>
+                </sc-if>
+
+                <!-- CONTENT -->
+                <sc-if value="{{page.isContent}}" hint-placeholder-val="{{false}}">
+                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:1800px;transform:scale(0.277778);transform-origin:top left;background:linear-gradient(165deg,{{page.t.bg}},{{page.t.bg2}});color:{{page.t.ink}};font-family:{{page.fontBody}};display:flex;flex-direction:column;padding:88px 88px 80px;overflow:hidden;"><div style="position:absolute;inset:0;background-image:{{page.gridBg}};background-size:{{page.gridSize}};opacity:{{page.gridOpacity}};pointer-events:none;"></div>
+                    <div style="position:absolute;top:30px;right:60px;font-size:340px;font-weight:900;line-height:1;color:{{page.t.title}};opacity:0.06;font-family:'Noto Serif SC',serif;">{{page.num}}</div>
+                    <div style="position:relative;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:{{page.t.sub}};letter-spacing:3px;">
+                      <span style="display:flex;align-items:center;gap:15px;"><span style="width:34px;height:3px;border-radius:2px;background:{{page.t.accent}};display:inline-block;"></span>{{page.brand}}</span>
+                      <span>{{page.num}}</span>
+                    </div>
+                    <div style="position:relative;flex:1;padding-top:64px;">
+                      <sc-for list="{{page.blocks}}" as="b" hint-placeholder-count="3">
+                        <div style="margin-top:{{b.mt}}px;margin-bottom:{{b.mb}}px;">
+                          <sc-if value="{{b.isHeading}}" hint-placeholder-val="{{false}}">
+                            <div style="display:flex;align-items:center;gap:24px;">
+                              <sc-if value="{{b.hasBadge}}" hint-placeholder-val="{{false}}">
+                                <span style="flex:none;width:74px;height:74px;border-radius:20px;background:{{page.t.accent}};color:#fff;font-size:42px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 16px {{page.t.shadow}};">{{b.badge}}</span>
+                              </sc-if>
+                              <sc-if value="{{b.barOnly}}" hint-placeholder-val="{{true}}">
+                                <span style="flex:none;width:10px;height:54px;border-radius:5px;background:{{page.t.accent}};"></span>
+                              </sc-if>
+                              <span style="font-size:60px;font-weight:{{page.titleWeight}};line-height:1.28;letter-spacing:0.5px;color:{{page.t.title}};font-family:{{page.fontTitle}};">{{b.rest}}</span>
+                            </div>
+                          </sc-if>
+                          <sc-if value="{{b.isPara}}" hint-placeholder-val="{{true}}">
+                            <div style="font-size:41px;line-height:1.86;color:{{page.t.ink}};letter-spacing:0.4px;text-wrap:pretty;">
+                              <sc-for list="{{b.runs}}" as="r" hint-placeholder-count="1"><span style="color:{{r.color}};font-weight:{{r.weight}};">{{r.t}}</span></sc-for>
+                            </div>
+                          </sc-if>
+                          <sc-if value="{{b.isBullets}}" hint-placeholder-val="{{false}}">
+                            <div style="background:{{page.t.soft}};border-radius:24px;padding:42px 44px;display:flex;flex-direction:column;gap:30px;border:1px solid {{page.t.line}};">
+                              <sc-for list="{{b.items}}" as="it" hint-placeholder-count="3">
+                                <div style="display:flex;gap:22px;align-items:flex-start;">
+                                  <sc-if value="{{it.hasNum}}" hint-placeholder-val="{{false}}"><span style="flex:none;min-width:46px;height:46px;padding:0 6px;border-radius:14px;background:{{page.t.accent}};color:#fff;font-size:26px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:4px;">{{it.num}}</span></sc-if>
+                                  <sc-if value="{{it.noNum}}" hint-placeholder-val="{{true}}"><span style="flex:none;width:18px;height:18px;border-radius:50%;margin-top:18px;background:{{page.t.accent}};"></span></sc-if>
+                                  <div style="font-size:39px;line-height:1.6;color:{{page.t.ink}};padding-top:2px;">
+                                    <sc-for list="{{it.runs}}" as="r" hint-placeholder-count="1"><span style="color:{{r.color}};font-weight:{{r.weight}};">{{r.t}}</span></sc-for>
+                                  </div>
+                                </div>
+                              </sc-for>
+                            </div>
+                          </sc-if>
+                          <sc-if value="{{b.isClosing}}" hint-placeholder-val="{{false}}">
+                            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:36px;padding:40px 0;">
+                              <svg width="76" height="60" viewBox="0 0 76 60" fill="none"><path d="M30 8 C 14 14, 8 30, 10 52 L 30 52 L 30 30 L 18 30 C 18 20, 24 14, 32 12 Z M66 8 C 50 14, 44 30, 46 52 L 66 52 L 66 30 L 54 30 C 54 20, 60 14, 68 12 Z" fill="{{page.t.accent}}" opacity="0.85"/></svg>
+                              <div style="font-size:56px;line-height:1.62;font-weight:700;color:{{page.t.title}};font-family:{{page.fontTitle}};max-width:840px;">
+                                <sc-for list="{{b.runs}}" as="r" hint-placeholder-count="1"><span style="color:{{r.color}};">{{r.t}}</span></sc-for>
+                              </div>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="position:relative;padding-top:30px;">
+                      <div style="height:6px;border-radius:3px;background:{{page.t.line}};overflow:hidden;margin-bottom:24px;">
+                        <div style="height:100%;width:{{page.progress}};background:{{page.t.accent}};border-radius:3px;"></div>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:27px;color:{{page.t.sub}};letter-spacing:1px;">
+                        <sc-if value="{{page.hasSig}}" hint-placeholder-val="{{true}}"><span>@{{page.signature}}</span></sc-if>
+                        <sc-if value="{{page.noSig}}" hint-placeholder-val="{{false}}"><span></span></sc-if>
+                        <span>{{page.num}} / {{page.totalStr}}</span>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+              </div>
+              <button onClick="{{page.exportSelf}}" style="padding:9px 22px;background:#fff;color:#8a7355;border:1px solid #cdb795;border-radius:9px;font-size:13px;letter-spacing:2px;cursor:pointer;white-space:nowrap;">保存第 {{page.num}} 张</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:980},&quot;cardCorners&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;直角&quot;,&quot;微圆角&quot;],&quot;default&quot;:&quot;直角&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;defaultTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;鸿蒙橙&quot;,&quot;奶油棕&quot;,&quot;松墨绿&quot;,&quot;黛蓝&quot;,&quot;莓粉&quot;],&quot;default&quot;:&quot;墨白&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  SAMPLE = `把生活过成喜欢的样子
+
+这两年我慢慢明白，所谓**松弛感**，不是什么都不做，而是把注意力收回到自己身上。下面是我坚持了很久、真正有用的几件小事。
+
+一、早晨留给自己
+不要一睁眼就看手机。先喝一杯温水，拉开窗帘，让光线照进来。哪怕只有十分钟，安静地坐一会儿，一整天的节奏都会不一样。
+
+二、给情绪留出口
+把情绪憋着只会越积越重，要学会温柔地把它放出来。
+- 把烦心事写下来，写完往往就轻了一半
+- 散步是最便宜的疗愈，走着走着答案就来了
+- 允许自己难过，但不允许自己一直停在原地
+
+三、减少不必要的拥有
+房间空一点，心也会跟着空一点。每个季度清理一次，只留下真正喜欢、真正会用的东西。你拥有的越少，被打扰的就越少。
+
+愿你也能在平淡的日子里，慢慢把生活过成自己喜欢的样子。`;
+
+  _refs = {};
+
+  state = {
+    raw: this.SAMPLE,
+    signature: 'AgentOPC',
+    themeIndex: 0,
+    targetPages: 5,
+    heroImg: null,
+    closingOn: true,
+    dedication: '',
+    fontIndex: 0,
+    titleFontIndex: 0,
+    bodyFontIndex: 0,
+    customColor: null,
+    patternIndex: 1,
+    coverLayout: 0,
+    pages: [],
+  };
+
+  getThemes() {
+    return [
+      { name: '鸿蒙橙', bg: '#FBF5EC', bg2: '#F3E6D4', ink: '#2B2620', sub: '#94816a', title: '#9E5A26', accent: '#C26B2E', soft: '#F4E8D6', line: '#E5D6BE', band: '#F6ECDA', shadow: 'rgba(194,107,46,0.3)' },
+      { name: '奶油棕', bg: '#F6F1E7', bg2: '#ECE0CE', ink: '#33302A', sub: '#8B8273', title: '#8C5A38', accent: '#B5764A', soft: '#F0E6D5', line: '#DFD1BB', band: '#F1E7D6', shadow: 'rgba(181,118,74,0.3)' },
+      { name: '松墨绿', bg: '#EFF2EA', bg2: '#E0E7D9', ink: '#28302A', sub: '#7c857a', title: '#2F5D48', accent: '#3E7A5E', soft: '#E6EDE0', line: '#D0D9C6', band: '#E8EEE1', shadow: 'rgba(62,122,94,0.28)' },
+      { name: '黛蓝', bg: '#EEF1F5', bg2: '#DFE7F0', ink: '#262C33', sub: '#79828d', title: '#2C4A6B', accent: '#3E6FA0', soft: '#E5ECF4', line: '#CFD9E4', band: '#E7EDF5', shadow: 'rgba(62,111,160,0.28)' },
+      { name: '莓粉', bg: '#FBF1EF', bg2: '#F4E0DC', ink: '#332A2C', sub: '#917b7e', title: '#9E3F54', accent: '#C25E70', soft: '#F4E4E1', line: '#E7D2CF', band: '#F5E6E2', shadow: 'rgba(194,94,112,0.28)' },
+    ];
+  }
+
+  pad(n) { return n < 10 ? '0' + n : '' + n; }
+  cnToNum(s) {
+    if (/^[0-9]+$/.test(s)) return s;
+    const map = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+    if (s.length === 1 && map[s]) return '' + map[s];
+    if (s === '十一') return '11';
+    if (s === '十二') return '12';
+    if (/^十[一二三四五六七八九]$/.test(s)) return '' + (10 + map[s[1]]);
+    return map[s[0]] ? '' + map[s[0]] : s;
+  }
+  getPalette() { return ['#C26B2E', '#D98E3D', '#B5764A', '#9E5A26', '#C2683F', '#B0433A', '#9E3F54', '#C25E70', '#6E5AA8', '#3E6FA0', '#2C4A6B', '#2F8F6B', '#3E7A5E', '#5A6B52', '#7A6A55', '#2A2620']; }
+  hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join(''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  rgb2hex(a) { return '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); }
+  mix(a, b, t) { const A = this.hex2rgb(a), B = this.hex2rgb(b); return this.rgb2hex([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]); }
+  curTheme() {
+    const base = this.getThemes()[this.state.themeIndex] || this.getThemes()[0];
+    const c = this.state.customColor;
+    if (!c) return base;
+    const rgb = this.hex2rgb(c);
+    return Object.assign({}, base, {
+      title: this.mix(c, '#000000', 0.10),
+      accent: c,
+      soft: this.mix(c, base.bg, 0.86),
+      line: this.mix(c, base.bg, 0.62),
+      band: this.mix(c, base.bg, 0.84),
+      shadow: 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0.3)',
+    });
+  }
+  getFonts() {
+    return [
+      { name: '黑体', family: "'Noto Sans SC',sans-serif" },
+      { name: '细黑', family: "'Noto Sans SC',sans-serif", tw: 300 },
+      { name: '宋体', family: "'Noto Serif SC',serif" },
+      { name: '雅宋', family: "'ZCOOL XiaoWei',serif" },
+      { name: '海报', family: "'ZCOOL QingKe HuangYou',sans-serif" },
+      { name: '圆体', family: "'ZCOOL KuaiLe',sans-serif" },
+      { name: '手写', family: "'Ma Shan Zheng',cursive" },
+      { name: '龙藏', family: "'Long Cang',cursive" },
+      { name: '志莽', family: "'Zhi Mang Xing',cursive" },
+      { name: '毛笔', family: "'Liu Jian Mao Cao',cursive" },
+    ];
+  }
+  curFont() {
+    const fs = this.getFonts();
+    const t = fs[this.state.titleFontIndex] || fs[0];
+    const b = fs[this.state.bodyFontIndex] || fs[0];
+    return { title: t.family, body: b.family, titleWeight: t.tw || 900 };
+  }
+  patternStyle(idx, line) {
+    switch (idx) {
+      case 0: return { img: 'none', size: 'auto', op: 0 };
+      case 1: return { img: 'linear-gradient(' + line + ' 1px,transparent 1px),linear-gradient(90deg,' + line + ' 1px,transparent 1px)', size: '64px 64px', op: 0.32 };
+      case 2: return { img: 'radial-gradient(' + line + ' 1.6px,transparent 1.7px)', size: '34px 34px', op: 0.42 };
+      case 3: return { img: 'repeating-linear-gradient(45deg,' + line + ' 0,' + line + ' 1.4px,transparent 1.4px,transparent 18px)', size: 'auto', op: 0.34 };
+      case 4: return { img: 'linear-gradient(90deg,' + line + ' 1px,transparent 1px)', size: '44px 44px', op: 0.3 };
+      case 5: return { img: 'linear-gradient(' + line + ' 1px,transparent 1px)', size: '44px 44px', op: 0.3 };
+      case 6: return { img: 'url(covers/pattern-math.png)', size: 'cover', op: 0.16 };
+      default: return { img: 'none', size: 'auto', op: 0 };
+    }
+  }
+  themeFromProp() {
+    const idx = this.getThemes().map(t => t.name).indexOf(this.props.defaultTheme);
+    return idx < 0 ? 0 : idx;
+  }
+
+  componentDidMount() {
+    const ti = this.themeFromProp();
+    this.setState({ themeIndex: ti, pages: this.buildPages() });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.forceUpdate());
+  }
+
+  regen() { this.setState({ pages: this.buildPages() }); }
+
+  toRuns(text, accent) {
+    const re = /(\*\*[^*]+\*\*|【[^】]+】|\*[^*\n]+\*)/g;
+    const runs = []; let last = 0; let m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) runs.push({ t: text.slice(last, m.index), hi: false });
+      const inner = m[0].replace(/^\*\*|\*\*$/g, '').replace(/^【|】$/g, '').replace(/^\*|\*$/g, '');
+      runs.push({ t: inner, hi: true });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) runs.push({ t: text.slice(last), hi: false });
+    if (!runs.length) runs.push({ t: text, hi: false });
+    return runs.map(r => ({ t: r.t, color: r.hi ? accent : 'inherit', weight: r.hi ? '700' : '400' }));
+  }
+
+  buildPages() {
+    const S = this.state;
+    const theme = this.curTheme();
+    const raw = (S.raw || '').replace(/\r/g, '');
+    const lines = raw.split('\n');
+    const stripMd = (s) => s.replace(/^#{1,6}\s*/, '').replace(/^>\s*/, '').replace(/#+$/, '').trim();
+    const isHeading = (t) => {
+      if (/^#{1,6}\s/.test(t)) return true;
+      if (/^【.+】$/.test(t)) return true;
+      if (/^[0-9]{1,2}、\s*\S/.test(t) && t.length <= 24) return true;
+      if (/^[一二三四五六七八九十]+[、.，)]\s*\S/.test(t) && t.length <= 24) return true;
+      if (/^第[0-9一二三四五六七八九十]+[条点步章节]/.test(t) && t.length <= 24) return true;
+      return false;
+    };
+    // markdown bullets: -, *, +, •, ordered "1." / "1)" / "(1)"
+    const parseBullet = (t) => {
+      let m;
+      if ((m = t.match(/^(\d{1,2})[\.\)]\s+([\s\S]+)$/))) return { text: m[2].trim(), num: m[1] };
+      if ((m = t.match(/^[（(]\s*(\d{1,2})\s*[)）]\s*([\s\S]+)$/))) return { text: m[2].trim(), num: m[1] };
+      if (/^[-*+•·▪◦‣]\s+/.test(t)) return { text: t.replace(/^[-*+•·▪◦‣]\s+/, '').trim(), num: '' };
+      return null;
+    };
+
+    let i = 0;
+    while (i < lines.length && !lines[i].trim()) i++;
+    let title = i < lines.length ? stripMd(lines[i].trim()).replace(/\*\*/g, '').replace(/[【】]/g, '') : '';
+    let rawTitle = i < lines.length ? stripMd(lines[i].trim()) : '';
+    if (i < lines.length) i++;
+    if (!title) { title = '我的小红书笔记'; rawTitle = title; }
+
+    const blocks = [];
+    let buf = [];
+    const flush = () => { if (buf.length) { blocks.push({ kind: 'para', text: buf.join('') }); buf = []; } };
+    for (; i < lines.length; i++) {
+      const t = lines[i].trim();
+      if (!t) { flush(); continue; }
+      if (isHeading(t)) { flush(); blocks.push({ kind: 'heading', text: stripMd(t) }); continue; }
+      const bl = parseBullet(t);
+      if (bl) { flush(); blocks.push({ kind: 'bullet', text: bl.text, num: bl.num }); continue; }
+      buf.push(t.replace(/^>\s*/, ''));
+    }
+    flush();
+
+    // word count + reading time
+    const wordCount = raw.replace(/\s/g, '').replace(/[*#>【】]/g, '').length;
+    const readMin = Math.max(1, Math.ceil(wordCount / 300));
+
+    // teaser
+    let teaser = '';
+    const fp = blocks.find(b => b.kind === 'para');
+    if (fp) { const m = fp.text.replace(/[*【】]/g, '').split(/(?<=[。！？!?])/); teaser = (m[0] || fp.text).slice(0, 48); }
+
+    // closing / dedication page (optional)
+    let closing = null;
+    if (S.closingOn) {
+      const ded = (S.dedication || '').trim();
+      if (ded) { closing = { text: ded }; }
+      else if (blocks.length > 2) {
+        const lastB = blocks[blocks.length - 1];
+        if (lastB.kind === 'para' && lastB.text.replace(/[*【】]/g, '').length <= 80) { closing = blocks.pop(); }
+      }
+    }
+
+    // density
+    const target = Math.max(1, (S.targetPages || 5) - 1 - (closing ? 1 : 0));
+    const bodyLen = blocks.reduce((s, b) => s + b.text.length, 0);
+    let MAX = Math.round(bodyLen / Math.max(1, target)) + 30;
+    MAX = Math.min(420, Math.max(180, MAX));
+
+    // expand long paras
+    const expanded = [];
+    for (const b of blocks) {
+      if (b.kind === 'para' && b.text.length > MAX) {
+        const parts = b.text.split(/(?<=[。！？!?；;])/);
+        let cur = '';
+        for (const s of parts) { if ((cur + s).length > MAX && cur) { expanded.push({ kind: 'para', text: cur }); cur = s; } else cur += s; }
+        if (cur) expanded.push({ kind: 'para', text: cur });
+      } else expanded.push(b);
+    }
+
+    // group consecutive bullets
+    const grouped = [];
+    let bg = null;
+    for (const b of expanded) {
+      if (b.kind === 'bullet') { if (!bg) { bg = { kind: 'bullets', items: [] }; grouped.push(bg); } bg.items.push({ text: b.text, num: b.num || '' }); }
+      else { bg = null; grouped.push(b); }
+    }
+
+    const weight = (b) => {
+      if (b.kind === 'heading') return Math.max(36, b.text.length * 1.6) + 30;
+      if (b.kind === 'bullets') return b.items.reduce((s, t) => s + t.text.length, 0) + b.items.length * 18 + 30;
+      return b.text.length + 8;
+    };
+
+    const cards = [];
+    let cur = null, w = 0;
+    const nc = () => { cur = { blocks: [] }; cards.push(cur); w = 0; };
+    for (const b of grouped) {
+      const bw = weight(b);
+      if (cur && w + bw > MAX && cur.blocks.length) {
+        let carried = null;
+        const last = cur.blocks[cur.blocks.length - 1];
+        if (last.kind === 'heading' && cur.blocks.length > 1) carried = cur.blocks.pop();
+        nc();
+        if (carried) { cur.blocks.push(carried); w += weight(carried); }
+      }
+      if (!cur) nc();
+      cur.blocks.push(b); w += bw;
+    }
+
+    const decorate = (b) => {
+      if (b.kind === 'heading') {
+        const m = b.text.match(/^([0-9一二三四五六七八九十]+)[、.\)）]\s*([\s\S]*)$/);
+        if (m) return { isHeading: true, hasBadge: true, barOnly: false, badge: this.cnToNum(m[1]), rest: m[2].replace(/\*\*/g, ''), mt: 14, mb: 28 };
+        return { isHeading: true, hasBadge: false, barOnly: true, badge: '', rest: b.text.replace(/^【|】$/g, '').replace(/\*\*/g, ''), mt: 14, mb: 28 };
+      }
+      if (b.kind === 'bullets') return { isBullets: true, items: b.items.map(it => ({ runs: this.toRuns(it.text, theme.accent), num: it.num, hasNum: !!it.num, noNum: !it.num })), mt: 6, mb: 34 };
+      return { isPara: true, runs: this.toRuns(b.text, theme.accent), mt: 0, mb: 34 };
+    };
+
+    const hasSig = !!(S.signature && S.signature.trim());
+    let contentCount = cards.length + (closing ? 1 : 0);
+    const total = 1 + contentCount;
+    const pages = [];
+    pages.push({
+      type: 'cover', isCover: true, isContent: false, rawTitle,
+      titleRuns: this.toRuns(rawTitle, theme.accent).map(r => ({ t: r.t, hi: r.color !== 'inherit' })),
+      teaser, signature: S.signature || '', hasSig, noSig: !hasSig,
+      wordCount, readMin, num: this.pad(1), totalStr: this.pad(total),
+    });
+    let idx = 2;
+    cards.forEach((c) => {
+      pages.push({ type: 'content', isCover: false, isContent: true, brand: title.slice(0, 13), blocks: c.blocks.map(decorate), signature: S.signature || '', hasSig, noSig: !hasSig, num: this.pad(idx), totalStr: this.pad(total), progress: Math.round(idx / total * 100) + '%' });
+      idx++;
+    });
+    if (closing) {
+      pages.push({ type: 'content', isCover: false, isContent: true, brand: title.slice(0, 13), blocks: [{ isClosing: true, runs: this.toRuns(closing.text, theme.accent), mt: 0, mb: 0 }], signature: S.signature || '', hasSig, noSig: !hasSig, num: this.pad(idx), totalStr: this.pad(total), progress: '100%' });
+    }
+    return pages;
+  }
+
+  async exportCard(idx) {
+    const node = this._refs[idx];
+    if (!node || !window.html2canvas) return;
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-14000px;top:0;z-index:-1;';
+    const clone = node.cloneNode(true);
+    clone.style.transform = 'none';
+    clone.style.margin = '0';
+    holder.appendChild(clone);
+    document.body.appendChild(holder);
+    try {
+      const canvas = await window.html2canvas(clone, { width: 1080, height: 1800, scale: 2, backgroundColor: this.curTheme().bg, useCORS: true, logging: false });
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url; a.download = 'xiaohongshu-' + this.pad(idx + 1) + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+    } finally { holder.remove(); }
+  }
+
+  async exportAll() {
+    for (let i = 0; i < (this.state.pages || []).length; i++) {
+      await this.exportCard(i);
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+
+  renderVals() {
+    const theme = this.curTheme();
+    const font = this.curFont();
+    const S = this.state;
+    const hero = S.heroImg;
+    const pat = this.patternStyle(S.patternIndex, theme.line);
+    const pages = (S.pages || []).map((p, i) => {
+      const o = { ...p, t: theme, fontTitle: font.title, fontBody: font.body, titleWeight: font.titleWeight, gridBg: pat.img, gridSize: pat.size, gridOpacity: pat.op, _idx: i, cardRef: (el) => { this._refs[i] = el; }, exportSelf: () => this.exportCard(i) };
+      if (o.isCover) { o.hero = hero; o.hasHero = !!hero; o.noHero = !hero; o.heroEl = hero ? React.createElement('img', { src: hero, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } }) : null; o.isCard = S.coverLayout === 0; o.isFull = S.coverLayout === 1; o.isBlend = S.coverLayout === 2; o.titleRuns = (p.titleRuns || []).map(r => ({ t: r.t, color: r.hi ? theme.accent : theme.title, fullColor: r.hi ? theme.accent : '#ffffff' })); }
+      return o;
+    });
+    const themes = this.getThemes().map((t, i) => ({
+      ...t, i,
+      ringColor: i === S.themeIndex ? t.title : 'rgba(0,0,0,0.08)',
+      labelColor: i === S.themeIndex ? '#7a5a36' : '#a89f90',
+      pick: () => this.setState({ themeIndex: i, customColor: null }, () => this.regen()),
+    }));
+    const mkFonts = (sel, key) => this.getFonts().map((f, i) => ({
+      name: f.name, family: f.family, i,
+      ring: i === sel ? theme.title : 'rgba(0,0,0,0.12)',
+      bg: i === sel ? theme.soft : '#FCFAF4',
+      col: i === sel ? '#7a5a36' : '#8a8073',
+      pick: () => this.setState({ [key]: i }, () => this.regen()),
+    }));
+    const titleFonts = mkFonts(S.titleFontIndex, 'titleFontIndex');
+    const bodyFonts = mkFonts(S.bodyFontIndex, 'bodyFontIndex');
+    const pal = this.getPalette().map((c) => ({
+      c, ring: S.customColor === c ? '#2c2823' : 'rgba(0,0,0,0.12)',
+      pick: () => this.setState({ customColor: c }, () => this.regen()),
+    }));
+    const patterns = ['无', '网格', '圆点', '斜纹', '竖线', '横线', '公式'].map((name, i) => ({
+      name, i,
+      ring: i === S.patternIndex ? theme.title : 'rgba(0,0,0,0.12)',
+      bg: i === S.patternIndex ? theme.soft : '#FCFAF4',
+      col: i === S.patternIndex ? '#7a5a36' : '#8a8073',
+      pick: () => this.setState({ patternIndex: i }, () => this.regen()),
+    }));
+    const coverLayouts = ['卡片', '全屏', '融入'].map((name, i) => ({
+      name, i,
+      ring: i === S.coverLayout ? theme.title : 'rgba(0,0,0,0.12)',
+      bg: i === S.coverLayout ? theme.soft : '#FCFAF4',
+      col: i === S.coverLayout ? '#7a5a36' : '#8a8073',
+      pick: () => this.setState({ coverLayout: i }, () => this.regen()),
+    }));
+    const rounded = this.props.cardCorners === '微圆角';
+    const covers = [];
+    for (let n = 1; n <= 20; n++) {
+      const src = 'covers/photo-' + this.pad(n) + '.jpg';
+      covers.push({
+        src,
+        ring: hero === src ? theme.accent : 'rgba(0,0,0,0)',
+        thumbEl: React.createElement('img', { src, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } }),
+        pick: () => this.setState({ heroImg: src }),
+      });
+    }
+    return {
+      covers,
+      raw: S.raw, signature: S.signature, targetPages: S.targetPages,
+      closingOn: S.closingOn, dedication: S.dedication,
+      closingBg: S.closingOn ? '#C26B2E' : '#D8CDB9',
+      closingKnob: S.closingOn ? '33px' : '3px',
+      toggleClosing: () => this.setState({ closingOn: !S.closingOn }, () => this.regen()),
+      onDedication: (e) => this.setState({ dedication: e.target.value }, () => this.regen()),
+      heroLabel: S.heroImg ? '已选择 · 点击更换' : '点击上传封面图',
+      hasHero: !!S.heroImg,
+      onRaw: (e) => this.setState({ raw: e.target.value }),
+      onSig: (e) => this.setState({ signature: e.target.value }, () => this.regen()),
+      onHero: (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => this.setState({ heroImg: r.result }); r.readAsDataURL(f); },
+      clearHero: () => this.setState({ heroImg: null }),
+      incPages: () => this.setState({ targetPages: Math.min(9, S.targetPages + 1) }, () => this.regen()),
+      decPages: () => this.setState({ targetPages: Math.max(3, S.targetPages - 1) }, () => this.regen()),
+      generate: () => this.regen(),
+      loadSample: () => this.setState({ raw: this.SAMPLE }, () => this.regen()),
+      clearText: () => this.setState({ raw: '' }, () => this.regen()),
+      exportAll: () => this.exportAll(),
+      theme, themes, titleFonts, bodyFonts, patterns, coverLayouts, pages,
+      palette: pal,
+      resetRing: S.customColor ? 'rgba(0,0,0,0.12)' : theme.title,
+      resetColor: () => this.setState({ customColor: null }, () => this.regen()),
+      onCustomColor: (e) => this.setState({ customColor: e.target.value }, () => this.regen()),
+      pageCount: pages.length,
+      cardRadius: rounded ? '18px' : '0px',
+    };
+  }
+}
+</script>
+</body>
+</html>
