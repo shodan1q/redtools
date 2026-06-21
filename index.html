@@ -144,7 +144,7 @@
         <div style="margin-top:24px;">
           <label style="display:block;font-size:12px;letter-spacing:3px;color:#9b9081;font-weight:700;margin-bottom:14px;">底纹</label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <sc-for list="{{patterns}}" as="pt" hint-placeholder-count="7">
+            <sc-for list="{{patterns}}" as="pt" hint-placeholder-count="11">
               <div onClick="{{pt.pick}}" style="padding:9px 17px;border-radius:11px;border:2px solid {{pt.ring}};background:{{pt.bg}};color:{{pt.col}};font-size:15px;cursor:pointer;">{{pt.name}}</div>
             </sc-for>
           </div>
@@ -487,6 +487,11 @@ class Component extends DCLogic {
     const b = fs[this.state.bodyFontIndex] || fs[0];
     return { title: t.family, body: b.family, titleWeight: t.tw || 900 };
   }
+  sciPattern(inner, tile, line) {
+    const body = inner.replace(/@/g, line);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + tile + '" height="' + tile + '" viewBox="0 0 ' + tile + ' ' + tile + '">' + body + '</svg>';
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+  }
   patternStyle(idx, line) {
     switch (idx) {
       case 0: return { img: 'none', size: 'auto', op: 0 };
@@ -496,6 +501,14 @@ class Component extends DCLogic {
       case 4: return { img: 'linear-gradient(90deg,' + line + ' 1px,transparent 1px)', size: '44px 44px', op: 0.3 };
       case 5: return { img: 'linear-gradient(' + line + ' 1px,transparent 1px)', size: '44px 44px', op: 0.3 };
       case 6: return { img: 'url(covers/pattern-math.png)', size: 'cover', op: 0.16 };
+      // 数学（矢量）：积分/求和/几何/方程
+      case 7: return { img: this.sciPattern('<g fill="none" stroke="@" stroke-width="2.2"><circle cx="62" cy="64" r="30"/><path d="M40 150 l44 0 l-44 56 l44 0"/><path d="M150 36 q40 30 0 60"/></g><g fill="@" font-family="Georgia,serif" font-size="30"><text x="150" y="64">&#8747;</text><text x="186" y="120">&#8721;</text><text x="34" y="120">&#960;</text><text x="150" y="170">E=mc&#178;</text><text x="34" y="246">a&#178;+b&#178;=c&#178;</text><text x="190" y="220">&#8730;</text></g>', 270, line), size: '270px 270px', op: 0.5 };
+      // 物理：原子轨道/波/矢量/公式
+      case 8: return { img: this.sciPattern('<g fill="none" stroke="@" stroke-width="2.2"><ellipse cx="64" cy="62" rx="44" ry="16"/><ellipse cx="64" cy="62" rx="44" ry="16" transform="rotate(60 64 62)"/><ellipse cx="64" cy="62" rx="44" ry="16" transform="rotate(120 64 62)"/><circle cx="64" cy="62" r="5" fill="@"/><path d="M150 50 q14 -22 28 0 t28 0 t28 0"/><path d="M30 210 l46 0 m-12 -8 l12 8 l-12 8"/></g><g fill="@" font-family="Georgia,serif" font-size="27"><text x="150" y="140">F=ma</text><text x="34" y="150">E=h&#957;</text><text x="160" y="220">&#955;=v/f</text></g>', 270, line), size: '270px 270px', op: 0.5 };
+      // 化学：苯环/分子键/烧瓶/分子式
+      case 9: return { img: this.sciPattern('<g fill="none" stroke="@" stroke-width="2.2"><path d="M62 28 l28 16 l0 32 l-28 16 l-28 -16 l0 -32 z"/><circle cx="62" cy="60" r="17"/><path d="M180 40 l16 9 l16 -9 m-16 9 l0 20"/><path d="M44 156 l0 30 l-16 30 l50 0 l-16 -30 l0 -30 z"/></g><g fill="@" font-family="Georgia,serif" font-size="25"><text x="150" y="160">H&#8322;O</text><text x="160" y="216">CO&#8322;</text><text x="28" y="120">OH&#8315;</text></g>', 270, line), size: '270px 270px', op: 0.5 };
+      // 计算机：二进制/代码/芯片
+      case 10: return { img: this.sciPattern('<g fill="none" stroke="@" stroke-width="2.2"><rect x="158" y="40" width="60" height="60" rx="7"/><path d="M158 56 l-12 0 M158 76 l-12 0 M158 96 l-12 0 M218 56 l12 0 M218 76 l12 0 M218 96 l12 0"/></g><g fill="@" font-family="monospace" font-size="25"><text x="20" y="52">01001011</text><text x="28" y="120">&lt;/&gt;</text><text x="120" y="158">{ }</text><text x="30" y="206">fn()</text><text x="158" y="216">&gt;_</text><text x="20" y="246">1010 0110</text></g>', 270, line), size: '270px 270px', op: 0.5 };
       default: return { img: 'none', size: 'auto', op: 0 };
     }
   }
@@ -765,7 +778,7 @@ class Component extends DCLogic {
       c, ring: S.customColor === c ? '#2c2823' : 'rgba(0,0,0,0.12)',
       pick: () => this.setState({ customColor: c }, () => this.regen()),
     }));
-    const patterns = ['无', '网格', '圆点', '斜纹', '竖线', '横线', '公式'].map((name, i) => ({
+    const patterns = ['无', '网格', '圆点', '斜纹', '竖线', '横线', '公式', '数学', '物理', '化学', '计算机'].map((name, i) => ({
       name, i,
       ring: i === S.patternIndex ? theme.title : 'rgba(0,0,0,0.12)',
       bg: i === S.patternIndex ? theme.soft : '#FCFAF4',
