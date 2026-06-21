@@ -110,6 +110,12 @@
                 <span style="font-size:11px;color:{{sw.labelColor}};letter-spacing:0.5px;">{{sw.name}}</span>
               </div>
             </sc-for>
+            <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;">
+              <div style="width:46px;height:46px;border-radius:13px;background:conic-gradient(from 90deg,#fdf6ec,#e7d9c2,#cfe0d8,#d3def0,#efd9e2,#e4dcef,#fdf6ec);border:2px solid {{customBgRing}};position:relative;overflow:hidden;box-shadow:0 3px 8px rgba(74,58,36,0.12);">
+                <input type="color" onChange="{{onCustomBg}}" style="position:absolute;inset:-6px;opacity:0;cursor:pointer;">
+              </div>
+              <span style="font-size:11px;color:{{customBgLabel}};letter-spacing:0.5px;">自定</span>
+            </label>
           </div>
         </div>
 
@@ -366,19 +372,40 @@ class Component extends DCLogic {
     titleFontIndex: 0,
     bodyFontIndex: 0,
     customColor: null,
+    customBg: null,
     patternIndex: 1,
     coverLayout: 0,
     pages: [],
   };
 
   getThemes() {
-    return [
-      { name: '鸿蒙橙', bg: '#FBF5EC', bg2: '#F3E6D4', ink: '#2B2620', sub: '#94816a', title: '#9E5A26', accent: '#C26B2E', soft: '#F4E8D6', line: '#E5D6BE', band: '#F6ECDA', shadow: 'rgba(194,107,46,0.3)' },
-      { name: '奶油棕', bg: '#F6F1E7', bg2: '#ECE0CE', ink: '#33302A', sub: '#8B8273', title: '#8C5A38', accent: '#B5764A', soft: '#F0E6D5', line: '#DFD1BB', band: '#F1E7D6', shadow: 'rgba(181,118,74,0.3)' },
-      { name: '松墨绿', bg: '#EFF2EA', bg2: '#E0E7D9', ink: '#28302A', sub: '#7c857a', title: '#2F5D48', accent: '#3E7A5E', soft: '#E6EDE0', line: '#D0D9C6', band: '#E8EEE1', shadow: 'rgba(62,122,94,0.28)' },
-      { name: '黛蓝', bg: '#EEF1F5', bg2: '#DFE7F0', ink: '#262C33', sub: '#79828d', title: '#2C4A6B', accent: '#3E6FA0', soft: '#E5ECF4', line: '#CFD9E4', band: '#E7EDF5', shadow: 'rgba(62,111,160,0.28)' },
-      { name: '莓粉', bg: '#FBF1EF', bg2: '#F4E0DC', ink: '#332A2C', sub: '#917b7e', title: '#9E3F54', accent: '#C25E70', soft: '#F4E4E1', line: '#E7D2CF', band: '#F5E6E2', shadow: 'rgba(194,94,112,0.28)' },
+    // compact spec [name, bg, bg2, ink, sub, accent]; title/soft/line/band/shadow derived
+    const spec = [
+      ['鸿蒙橙', '#FBF5EC', '#F3E6D4', '#2B2620', '#94816a', '#C26B2E'],
+      ['奶油棕', '#F6F1E7', '#ECE0CE', '#33302A', '#8B8273', '#B5764A'],
+      ['松墨绿', '#EFF2EA', '#E0E7D9', '#28302A', '#7c857a', '#3E7A5E'],
+      ['黛蓝', '#EEF1F5', '#DFE7F0', '#262C33', '#79828d', '#3E6FA0'],
+      ['莓粉', '#FBF1EF', '#F4E0DC', '#332A2C', '#917b7e', '#C25E70'],
+      ['米白', '#FAF7F0', '#EFEADD', '#2D2A24', '#8c8576', '#A8763E'],
+      ['浅杏', '#FCF3E8', '#F6E6CF', '#322B22', '#988465', '#D98E3D'],
+      ['雾霾蓝', '#EDF0F2', '#DDE4E8', '#272D31', '#7b8389', '#3E6F84'],
+      ['薄荷绿', '#EAF3EE', '#D7E8DD', '#27302B', '#7a857e', '#2F8F6B'],
+      ['青瓷', '#ECF2F1', '#D9E6E3', '#26302E', '#788581', '#2F8F86'],
+      ['藕荷', '#F6EFF4', '#E9DAE6', '#2F2A2E', '#8a7d87', '#9E5A8C'],
+      ['浅紫', '#F1EFF6', '#E2DCEE', '#2A2730', '#807a8d', '#6E5AA8'],
+      ['豆沙', '#F7EFEC', '#EDDCD4', '#322A26', '#90817a', '#B0573A'],
+      ['暖灰', '#F2F1EE', '#E3E1DA', '#2C2A26', '#86837b', '#7A6A55'],
+      ['墨黑', '#23211E', '#2D2A26', '#EDE7DB', '#a39a8a', '#D98E3D'],
+      ['靛夜', '#1E2430', '#28303E', '#E3E8F0', '#94a0b3', '#5B8FD0'],
     ];
+    return spec.map(([name, bg, bg2, ink, sub, accent]) => ({
+      name, bg, bg2, ink, sub, accent,
+      title: this.mix(accent, '#000000', 0.12),
+      soft: this.mix(accent, bg, 0.86),
+      line: this.mix(accent, bg, 0.66),
+      band: this.mix(accent, bg, 0.84),
+      shadow: 'rgba(' + this.hex2rgb(accent).join(',') + ',0.3)',
+    }));
   }
 
   pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -395,8 +422,23 @@ class Component extends DCLogic {
   hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join(''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
   rgb2hex(a) { return '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); }
   mix(a, b, t) { const A = this.hex2rgb(a), B = this.hex2rgb(b); return this.rgb2hex([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]); }
+  luminance(h) { const a = this.hex2rgb(h); return (0.299 * a[0] + 0.587 * a[1] + 0.114 * a[2]) / 255; }
   curTheme() {
-    const base = this.getThemes()[this.state.themeIndex] || this.getThemes()[0];
+    let base = this.getThemes()[this.state.themeIndex] || this.getThemes()[0];
+    const bgC = this.state.customBg;
+    if (bgC) {
+      const dark = this.luminance(bgC) < 0.45;
+      const tone = dark ? '#ffffff' : '#000000';
+      base = Object.assign({}, base, {
+        bg: bgC,
+        bg2: this.mix(bgC, tone, 0.08),
+        ink: this.mix(bgC, dark ? '#ffffff' : '#000000', dark ? 0.88 : 0.86),
+        sub: this.mix(bgC, dark ? '#ffffff' : '#000000', dark ? 0.55 : 0.48),
+        soft: this.mix(bgC, tone, 0.06),
+        line: this.mix(bgC, tone, 0.16),
+        band: this.mix(bgC, tone, 0.05),
+      });
+    }
     const c = this.state.customColor;
     if (!c) return base;
     const rgb = this.hex2rgb(c);
@@ -686,9 +728,9 @@ class Component extends DCLogic {
     });
     const themes = this.getThemes().map((t, i) => ({
       ...t, i,
-      ringColor: i === S.themeIndex ? t.title : 'rgba(0,0,0,0.08)',
-      labelColor: i === S.themeIndex ? '#7a5a36' : '#a89f90',
-      pick: () => this.setState({ themeIndex: i, customColor: null }, () => this.regen()),
+      ringColor: (!S.customBg && i === S.themeIndex) ? t.title : 'rgba(0,0,0,0.08)',
+      labelColor: (!S.customBg && i === S.themeIndex) ? '#7a5a36' : '#a89f90',
+      pick: () => this.setState({ themeIndex: i, customColor: null, customBg: null }, () => this.regen()),
     }));
     const mkFonts = (sel, key) => this.getFonts().map((f, i) => ({
       name: f.name, family: f.family, i,
@@ -753,6 +795,9 @@ class Component extends DCLogic {
       resetRing: S.customColor ? 'rgba(0,0,0,0.12)' : theme.title,
       resetColor: () => this.setState({ customColor: null }, () => this.regen()),
       onCustomColor: (e) => this.setState({ customColor: e.target.value }, () => this.regen()),
+      customBgRing: S.customBg ? theme.title : 'rgba(0,0,0,0.08)',
+      customBgLabel: S.customBg ? '#7a5a36' : '#a89f90',
+      onCustomBg: (e) => this.setState({ customBg: e.target.value }, () => this.regen()),
       pageCount: pages.length,
       cardRadius: rounded ? '18px' : '0px',
     };
