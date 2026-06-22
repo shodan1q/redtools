@@ -33,13 +33,13 @@ for t, v in zip(TIERS, [6_800_000_000, 800_000_000, 400_000_000, 20_000_000, 2_0
 
 def main():
     rc.waffle(
-        TIERS, os.path.join(OUT, "chart-01-人群点阵.png"),
+        TIERS, os.path.join(OUT, "chart-01-people-dots.png"),
         title="每个点代表 320 万人",
         subtitle="2,500 个点 = 81 亿人 · 全球 AI 使用层级现状（2026 年 2 月，估算）",
         note="本图基于公开数据、行业报告及统计推算，仅用于趋势展示，不代表精确统计结果。",
     )
     rc.tiers_bar(
-        TIERS, os.path.join(OUT, "chart-02-使用层级.png"),
+        TIERS, os.path.join(OUT, "chart-02-tiers.png"),
         title="AI 使用层级 · 全球估算",
         subtitle="人数对数刻度 · 越往上越稀少",
         note="数据为估算推演，仅用于趋势展示。",

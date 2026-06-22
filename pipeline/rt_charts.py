@@ -53,7 +53,7 @@ def _ensure_dir(path):
         os.makedirs(d, exist_ok=True)
 
 
-def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 1520)):
+def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 1440)):
     """点阵/华夫图：每个点代表固定人数，按层级从上到下填充。
 
     tiers: [{'label','people','pct','color','dots'(可选)}...]，dots 不给则按 pct 估算。

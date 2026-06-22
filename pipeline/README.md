@@ -47,6 +47,25 @@ python3 content/<dir>/make_charts.py        # 只出数据图表
 python3 pipeline/export_cards.py content/<dir>   # 只导出本工具卡片
 ```
 
+## 把数据图表插进图文流（关键）
+
+在 `原长文.md` 里用 **Markdown 图片语法**单独成行，即可在该位置插入一张「整页图表卡」：
+
+```markdown
+- 只有约200万人（**0.024%**）在用AI构建Agent。
+
+![](content/2026-06-22-ai-vs-human/images/chart-01-people-dots.png)
+
+![](content/2026-06-22-ai-vs-human/images/chart-02-tiers.png)
+
+金字塔尖那0.024%，才是真正把AI当生产力的人。
+```
+
+- 路径用**相对项目根目录**（导出时本工具从根目录提供服务）。
+- 图表会被 `export_cards.py` 一并导出成 `card-NN.png`，和文字卡片混排在同一轮播里。
+- 图表尺寸建议出成 1080×1440（3:4），与卡片同比，整页填满无留白。
+- 顺序：先 `make_charts.py` 出图，再 `export_cards.py` 导卡（`build` 已按此顺序）。
+
 ## meta.json 参数对照
 
 - `themeIndex`：主题配色，见 `index.html` 的 `getThemes()` 顺序（14=墨黑，15=靛夜…）
