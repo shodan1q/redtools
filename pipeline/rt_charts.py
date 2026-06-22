@@ -53,7 +53,7 @@ def _ensure_dir(path):
         os.makedirs(d, exist_ok=True)
 
 
-def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 1440)):
+def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 1180)):
     """点阵/华夫图：每个点代表固定人数，按层级从上到下填充。
 
     tiers: [{'label','people','pct','color','dots'(可选)}...]，dots 不给则按 pct 估算。
@@ -75,6 +75,9 @@ def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 
         colors += [t["color"]] * d
     colors = colors[:total]
 
+    # 浅灰太淡、嵌进卡片缩小后看不清 —— 统一加深一档
+    colors = ["#AEB4BD" if c == "#C9CDD2" else c for c in colors]
+
     w, h = px
     dpi = 160
     fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
@@ -82,14 +85,14 @@ def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 
 
     # 标题区
     fig.text(0.5, 0.965, title, ha="center", va="top",
-             fontsize=30, fontweight="bold", color=INK)
+             fontsize=32, fontweight="bold", color=INK)
     if subtitle:
-        fig.text(0.5, 0.918, subtitle, ha="center", va="top",
-                 fontsize=13.5, color=SUB)
+        fig.text(0.5, 0.910, subtitle, ha="center", va="top",
+                 fontsize=12.5, color=SUB)
 
-    # 点阵区
-    grid_top, grid_bottom = 0.885, 0.40
-    ax = fig.add_axes([0.06, grid_bottom, 0.88, grid_top - grid_bottom])
+    # 点阵区（离散方点、留间隙，像信息图）
+    grid_top, grid_bottom = 0.875, 0.40
+    ax = fig.add_axes([0.07, grid_bottom, 0.86, grid_top - grid_bottom])
     ax.set_xlim(-0.6, cols - 0.4)
     ax.set_ylim(-0.6, rows - 0.4)
     ax.invert_yaxis()
@@ -97,31 +100,28 @@ def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 
     ax.set_aspect("equal")
     xs = [i % cols for i in range(total)]
     ys = [i // cols for i in range(total)]
-    ax.scatter(xs, ys, c=colors, marker="s", s=26, linewidths=0)
+    ax.scatter(xs, ys, c=colors, marker="s", s=14, linewidths=0)
 
-    # 图例区
+    # 图例区（紧凑：色块 + 标签·人数 + 百分比，省略长描述）
     n = len(tiers)
     y0 = 0.345
-    dy = y0 / (n + 0.3)
+    dy = y0 / (n + 0.2)
     pct_palette = {"#3DA35D": "#2F8F4E", "#3E7BE6": "#2F6BD6",
                    "#F5A623": "#D98E1E", "#E1483D": "#D23A30"}
     for k, t in enumerate(tiers):
         y = y0 - k * dy
-        fig.patches.append(plt.Rectangle((0.06, y - 0.012), 0.028, 0.024,
+        fig.patches.append(plt.Rectangle((0.07, y - 0.016), 0.034, 0.030,
                                          transform=fig.transFigure,
                                          facecolor=t["color"], edgecolor="none",
                                          clip_on=False))
-        fig.text(0.10, y, f"{t['label']}  ·  {t['people']}", va="center",
-                 fontsize=15, fontweight="bold", color=INK)
+        fig.text(0.12, y, f"{t['label']}  ·  {t['people']}", va="center",
+                 fontsize=16.5, fontweight="bold", color=INK)
         pc = pct_palette.get(t["color"], SUB)
-        fig.text(0.94, y, t["pct_label"] if "pct_label" in t else f"{t['pct']}%",
-                 va="center", ha="right", fontsize=14.5, fontweight="bold", color=pc)
-        if t.get("desc"):
-            fig.text(0.10, y - dy * 0.42, t["desc"], va="center",
-                     fontsize=11.5, color=SUB)
+        fig.text(0.93, y, t["pct_label"] if "pct_label" in t else f"{t['pct']}%",
+                 va="center", ha="right", fontsize=16.5, fontweight="bold", color=pc)
 
     if note:
-        fig.text(0.06, 0.022, "注：" + note, va="bottom", fontsize=10.5, color=SUB)
+        fig.text(0.07, 0.025, "注：" + note, va="bottom", fontsize=12, color=SUB)
 
     _ensure_dir(out)
     fig.savefig(out, dpi=dpi, facecolor="white")
@@ -129,7 +129,7 @@ def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 
     return out
 
 
-def tiers_bar(tiers, out, title, subtitle="", note="", px=(1080, 1440)):
+def tiers_bar(tiers, out, title, subtitle="", note="", px=(1080, 840)):
     """层级条形图（对数刻度，跨度极大时仍清晰），带人数标注。"""
     w, h = px
     dpi = 160

@@ -299,6 +299,10 @@
                               <sc-for list="{{b.runs}}" as="r" hint-placeholder-count="1"><span style="color:{{r.color}};font-weight:{{r.weight}};">{{r.t}}</span></sc-for>
                             </div>
                           </sc-if>
+                          <sc-if value="{{b.isImage}}" hint-placeholder-val="{{false}}">
+                            <div style="width:100%;height:{{b.boxH}}px;border-radius:22px;overflow:hidden;background:#ffffff;background-image:{{b.imgUrl}};background-size:contain;background-position:center;background-repeat:no-repeat;box-shadow:0 8px 26px rgba(0,0,0,0.14);"></div>
+                            <sc-if value="{{b.hasCaption}}" hint-placeholder-val="{{false}}"><div style="margin-top:16px;text-align:center;font-size:26px;color:{{page.t.sub}};letter-spacing:0.5px;">{{b.caption}}</div></sc-if>
+                          </sc-if>
                           <sc-if value="{{b.isBullets}}" hint-placeholder-val="{{false}}">
                             <div style="background:{{page.t.soft}};border-radius:24px;padding:42px 44px;display:flex;flex-direction:column;gap:30px;border:1px solid {{page.t.line}};">
                               <sc-for list="{{b.items}}" as="it" hint-placeholder-count="3">
@@ -333,13 +337,6 @@
                         <span>{{page.num}} / {{page.totalStr}}</span>
                       </div>
                     </div>
-                  </div>
-                </sc-if>
-
-                <!-- IMAGE / CHART PAGE -->
-                <sc-if value="{{page.isImage}}" hint-placeholder-val="{{false}}">
-                  <div ref="{{page.cardRef}}" style="position:relative;width:1080px;height:{{page.cardH}}px;transform:scale(0.277778);transform-origin:top left;background:#ffffff;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-                    <div style="width:100%;height:100%;background-image:{{page.imgUrl}};background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#ffffff;"></div>
                   </div>
                 </sc-if>
 
@@ -429,6 +426,19 @@ class Component extends DCLogic {
       { name: '标准 3:4', w: 1080, h: 1440 },
       { name: '长文 3:5', w: 1080, h: 1800 },
     ];
+  }
+  // 内联图片的高宽比（h/w）。首次遇到先用默认值，加载完真实尺寸后重新分页。
+  getImgRatio(src) {
+    if (!this._imgDims) { this._imgDims = {}; this._imgLoading = {}; }
+    if (this._imgDims[src]) return this._imgDims[src];
+    if (!this._imgLoading[src]) {
+      this._imgLoading[src] = true;
+      const img = new Image();
+      img.onload = () => { this._imgDims[src] = img.naturalHeight / img.naturalWidth; this.regen(); };
+      img.onerror = () => { this._imgDims[src] = 0.95; this.regen(); };
+      img.src = src;
+    }
+    return 0.95;
   }
 
   pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -657,7 +667,10 @@ class Component extends DCLogic {
     host.setAttribute('aria-hidden', 'true');
     host.style.cssText = 'position:absolute;left:-99999px;top:0;width:904px;visibility:hidden;pointer-events:none;box-sizing:border-box;font-family:' + font.body + ';';
     document.body.appendChild(host);
+    const CONTENT_W = 904; // 1080 - 88*2
+    const imgBoxH = (src) => Math.round(Math.min(CONTENT_W * this.getImgRatio(src), AVAIL - 24));
     const measure = (b) => {
+      if (b.kind === 'image') return imgBoxH(b.src) + 8 + 28;
       host.innerHTML = blockHTML(b);
       const el = host.firstElementChild;
       const h = el ? el.getBoundingClientRect().height : 0;
@@ -665,7 +678,7 @@ class Component extends DCLogic {
     };
 
     const target = Math.max(1, (S.targetPages || 5) - 1 - (closing ? 1 : 0));
-    const totalH = blocks.filter((b) => b.kind !== 'image').reduce((s, b) => s + measure(b), 0);
+    const totalH = blocks.reduce((s, b) => s + measure(b), 0);
     // spread evenly over the requested page count, but never pack past what fits
     const budget = Math.min(AVAIL, Math.max(400, Math.ceil(totalH / target)));
 
@@ -695,7 +708,6 @@ class Component extends DCLogic {
     let cur = null, w = 0;
     const nc = () => { cur = { blocks: [] }; cards.push(cur); w = 0; };
     for (const b of grouped) {
-      if (b.kind === 'image') { cur = null; w = 0; cards.push({ image: { src: b.src, caption: b.caption } }); continue; }
       const bw = measure(b);
       if (cur && w + bw > budget && cur.blocks.length) {
         let carried = null;
@@ -716,6 +728,7 @@ class Component extends DCLogic {
         return { isHeading: true, hasBadge: false, barOnly: true, badge: '', rest: b.text.replace(/^【|】$/g, '').replace(/\*\*/g, ''), mt: 14, mb: 28 };
       }
       if (b.kind === 'bullets') return { isBullets: true, items: b.items.map(it => ({ runs: this.toRuns(it.text, theme.accent), num: it.num, hasNum: !!it.num, noNum: !it.num })), mt: 6, mb: 34 };
+      if (b.kind === 'image') return { isImage: true, imgUrl: 'url("' + b.src + '")', boxH: imgBoxH(b.src), caption: b.caption || '', hasCaption: !!b.caption, mt: 8, mb: 28 };
       return { isPara: true, runs: this.toRuns(b.text, theme.accent), mt: 0, mb: 34 };
     };
 
@@ -731,11 +744,7 @@ class Component extends DCLogic {
     });
     let idx = 2;
     cards.forEach((c) => {
-      if (c.image) {
-        pages.push({ type: 'image', isCover: false, isContent: false, isImage: true, imgSrc: c.image.src, caption: c.image.caption || '', signature: S.signature || '', hasSig, noSig: !hasSig, num: this.pad(idx), totalStr: this.pad(total) });
-      } else {
-        pages.push({ type: 'content', isCover: false, isContent: true, brand: title.slice(0, 40), blocks: c.blocks.map(decorate), signature: S.signature || '', hasSig, noSig: !hasSig, num: this.pad(idx), totalStr: this.pad(total), progress: Math.round(idx / total * 100) + '%' });
-      }
+      pages.push({ type: 'content', isCover: false, isContent: true, brand: title.slice(0, 40), blocks: c.blocks.map(decorate), signature: S.signature || '', hasSig, noSig: !hasSig, num: this.pad(idx), totalStr: this.pad(total), progress: Math.round(idx / total * 100) + '%' });
       idx++;
     });
     if (closing) {
@@ -787,7 +796,6 @@ class Component extends DCLogic {
     const pages = (S.pages || []).map((p, i) => {
       const o = { ...p, t: theme, fontTitle: font.title, fontBody: font.body, titleWeight: font.titleWeight, cardH, previewH, heroCardH, heroBlendH, gridBg: pat.img, gridSize: pat.size, gridOpacity: pat.op, _idx: i, cardRef: (el) => { this._refs[i] = el; }, exportSelf: () => this.exportCard(i) };
       if (o.isCover) { o.hero = hero; o.hasHero = !!hero; o.noHero = !hero; o.heroEl = hero ? React.createElement('div', { style: { width: '100%', height: '100%', backgroundImage: 'url("' + hero + '")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } }) : null; o.isCard = S.coverLayout === 0; o.isFull = S.coverLayout === 1; o.isBlend = S.coverLayout === 2; o.titleRuns = (p.titleRuns || []).map(r => ({ t: r.t, color: r.hi ? theme.accent : theme.title, fullColor: r.hi ? theme.accent : '#ffffff' })); }
-      if (o.isImage) { o.imgUrl = 'url("' + (o.imgSrc || '') + '")'; }
       return o;
     });
     const themes = this.getThemes().map((t, i) => ({
