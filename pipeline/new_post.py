@@ -23,16 +23,17 @@ META_TMPL = """{{
   "title": "{title}",
   "source": "原长文.md",
   "signature": "AgentOPC",
-  "themeIndex": 14,
+  "themeIndex": 11,
+  "customColor": "#2F9488",
   "ratioIndex": 0,
-  "patternIndex": 7,
+  "patternIndex": 6,
   "coverLayout": 1,
-  "titleFontIndex": 4,
-  "bodyFontIndex": 0,
+  "titleFontIndex": 5,
+  "bodyFontIndex": 5,
   "targetPages": 9,
   "closingOn": true,
   "heroImg": "covers/photo-13.jpg",
-  "_comment": "themeIndex见getThemes()顺序;patternIndex 7=数学8=物理9=化学10=计算机;coverLayout 0卡片1全屏2融入;ratioIndex 0=3:4 1=长文3:5"
+  "_comment": "themeIndex 11=浅紫;customColor青绿主色;patternIndex 6=公式(7数学8物理9化学10计算机);字体5=圆体;coverLayout 0卡片1全屏2融入;ratioIndex 0=3:4 1=长文3:5"
 }}
 """
 
