@@ -51,4 +51,24 @@ https://shodan1q.github.io/<仓库名>/
 index.html                 # 入口（静态页面）
 support.js                 # 运行时（必须与 index.html 同目录）
 covers/                    # 20 张内置封面图 photo-01.jpg … photo-20.jpg
+pipeline/                  # 内容生产流水线（Python）
+content/                   # 按日期归档的每篇内容（长文 / 概述 / 图片）
 ```
+
+## 内容生产流水线（Python + Jupyter）
+
+把「写长文 → Python 出数据图表 → 无头驱动本工具导出图文卡片 → 按时间归档」串成一条命令。
+详见 [`pipeline/README.md`](pipeline/README.md)。
+
+```bash
+pip install matplotlib playwright && playwright install chromium
+
+python3 pipeline/new_post.py new "标题"                       # 建日期文件夹脚手架
+# 编辑 content/<日期-标题>/ 下的 原长文.md、make_charts.py、meta.json
+python3 pipeline/new_post.py build content/<日期-标题>         # 出图表 + 导出全部卡片
+```
+
+每篇产出归档在 `content/<日期>-<标题>/`：`原长文.md`、`概述.md`、`meta.json`、
+`images/`（本工具卡片 `card-NN.png` + Python 数据图表 `chart-*.png`）。
+
+> 无头导出依赖 `index.html` 内置的桥接（仅当注入 `window.RT_CONFIG` 时激活，正常使用零影响）。

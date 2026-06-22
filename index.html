@@ -518,8 +518,20 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
-    const ti = this.themeFromProp();
-    this.setState({ themeIndex: ti, pages: this.buildPages() });
+    // headless bridge: when window.RT_CONFIG is injected (e.g. by the export pipeline),
+    // apply it as initial state and expose programmatic export hooks. Zero effect in normal use.
+    const cfg = (typeof window !== 'undefined' && window.RT_CONFIG) ? window.RT_CONFIG : null;
+    const init = { themeIndex: this.themeFromProp() };
+    if (cfg) Object.assign(init, cfg);
+    this.setState(init, () => {
+      this.setState({ pages: this.buildPages() }, () => {
+        if (typeof window !== 'undefined') {
+          window.RT_PAGE_COUNT = () => (this.state.pages || []).length;
+          window.RT_EXPORT_DATAURL = async (i) => { const c = await this.renderCanvas(i); return c ? c.toDataURL('image/png') : null; };
+          window.RT_READY = true;
+        }
+      });
+    });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.regen());
   }
 
@@ -718,9 +730,9 @@ class Component extends DCLogic {
     return pages;
   }
 
-  async exportCard(idx) {
+  async renderCanvas(idx) {
     const node = this._refs[idx];
-    if (!node || !window.html2canvas) return;
+    if (!node || !window.html2canvas) return null;
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const holder = document.createElement('div');
     holder.style.cssText = 'position:fixed;left:-14000px;top:0;z-index:-1;';
@@ -731,12 +743,16 @@ class Component extends DCLogic {
     document.body.appendChild(holder);
     try {
       const ch = (this.getRatios()[this.state.ratioIndex] || this.getRatios()[0]).h;
-      const canvas = await window.html2canvas(clone, { width: 1080, height: ch, scale: 2, backgroundColor: this.curTheme().bg, useCORS: true, logging: false });
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url; a.download = 'xiaohongshu-' + this.pad(idx + 1) + '.png';
-      document.body.appendChild(a); a.click(); a.remove();
+      return await window.html2canvas(clone, { width: 1080, height: ch, scale: 2, backgroundColor: this.curTheme().bg, useCORS: true, logging: false });
     } finally { holder.remove(); }
+  }
+  async exportCard(idx) {
+    const canvas = await this.renderCanvas(idx);
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = 'xiaohongshu-' + this.pad(idx + 1) + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 
   async exportAll() {

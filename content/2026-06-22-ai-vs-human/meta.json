@@ -1,0 +1,15 @@
+{
+  "title": "AI不会取代人类？这话可能是自我安慰",
+  "source": "原长文.md",
+  "signature": "AgentOPC",
+  "themeIndex": 14,
+  "ratioIndex": 0,
+  "patternIndex": 7,
+  "coverLayout": 1,
+  "titleFontIndex": 4,
+  "bodyFontIndex": 0,
+  "targetPages": 9,
+  "closingOn": true,
+  "heroImg": "covers/photo-13.jpg",
+  "_comment": "themeIndex 14=墨黑, patternIndex 7=数学, coverLayout 1=全屏, ratioIndex 0=3:4. heroImg 可改为某张数据图表的路径用作封面。"
+}
