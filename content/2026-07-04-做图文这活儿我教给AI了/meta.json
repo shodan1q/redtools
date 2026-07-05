@@ -1,0 +1,16 @@
+{
+  "title": "做图文这活儿，我教给AI了",
+  "source": "原长文.md",
+  "signature": "AgentOPC",
+  "themeIndex": 11,
+  "customColor": "#2F9488",
+  "ratioIndex": 0,
+  "patternIndex": 6,
+  "coverLayout": 1,
+  "titleFontIndex": 5,
+  "bodyFontIndex": 5,
+  "targetPages": 5,
+  "closingOn": true,
+  "heroImg": "covers/photo-15.jpg",
+  "_comment": "预设1·知识浅紫（家族默认=品牌识别）：浅紫底+青绿主色+公式底纹+圆体；封面 photo-15 手举A.I.便签（有人物、亲切、正对主题）"
+}
