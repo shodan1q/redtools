@@ -19,7 +19,7 @@ content/<日期>-<标题>/
 
 | 文件 | 作用 |
 |---|---|
-| `rt_charts.py` | 可复用图表库：`waffle()` 点阵图、`tiers_bar()` 对数条形图；中文字体自动适配，配色与卡片统一，输出 1080px PNG |
+| `rt_charts.py` | 可复用图表库：`waffle()` 点阵图、`tiers_bar()` 对数条形图、`donut()` 环形占比、`trend()` 趋势折线、`compare_bars()` 线性对比条形；中文字体自动适配，配色与卡片统一，输出 1080px PNG。选型与设计守则见 [`.claude/skills/xhs-post/references/charts-guide.md`](../.claude/skills/xhs-post/references/charts-guide.md) |
 | `export_cards.py` | 用 Playwright 无头驱动 redtools，注入文案+参数，逐张导出图文卡片到 `images/` |
 | `new_post.py` | 编排：`new` 建脚手架；`build` 一键出图表+导出卡片 |
 | `charts.ipynb` | Jupyter 版图表（与 `rt_charts.py` 等价，可交互预览） |

@@ -1,0 +1,16 @@
+{
+  "title": "为什么你总是存不下钱",
+  "source": "原长文.md",
+  "signature": "AgentOPC",
+  "themeIndex": 14,
+  "customColor": null,
+  "ratioIndex": 0,
+  "patternIndex": 4,
+  "coverLayout": 1,
+  "titleFontIndex": 2,
+  "bodyFontIndex": 1,
+  "targetPages": 6,
+  "closingOn": true,
+  "heroImg": "covers/photo-05.jpg",
+  "_comment": "预设6·墨黑杂志：themeIndex 14=墨黑(自带金橙强调,customColor留null); patternIndex 4=竖线(深色主题只配线条纹); 标题2=宋体 正文1=细黑; coverLayout 1=全屏; heroImg photo-05=金色数据隧道(财富); ratioIndex 0=3:4"
+}

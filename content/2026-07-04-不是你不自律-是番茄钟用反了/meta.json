@@ -1,0 +1,16 @@
+{
+  "title": "不是你不自律，是番茄钟用反了",
+  "source": "原长文.md",
+  "signature": "AgentOPC",
+  "themeIndex": 8,
+  "customColor": null,
+  "ratioIndex": 0,
+  "patternIndex": 7,
+  "coverLayout": 0,
+  "titleFontIndex": 5,
+  "bodyFontIndex": 0,
+  "targetPages": 6,
+  "closingOn": true,
+  "heroImg": "covers/photo-18.jpg",
+  "_comment": "预设7·薄荷课堂：themeIndex 8=薄荷绿; patternIndex 7=数学纹; 标题圆体/正文黑体; coverLayout 0=卡片+黑板公式图; customColor 置 null 清除模板残留"
+}

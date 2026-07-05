@@ -7,8 +7,11 @@ rt_charts —— redtools 数据图表库（matplotlib）
 
 复用方式（见 content/<post>/make_charts.py）：
     import rt_charts as rc
-    rc.waffle(tiers, "images/chart.png", title, subtitle, note)
-    rc.tiers_bar(tiers, "images/bar.png", title)
+    rc.waffle(tiers, "images/chart.png", title, subtitle, note)   # 点阵图（人群构成）
+    rc.tiers_bar(tiers, "images/bar.png", title)                  # 对数条形（量级悬殊）
+    rc.donut(parts, "images/donut.png", title)                    # 环形占比
+    rc.trend(series, "images/trend.png", title, xlabels)          # 趋势折线
+    rc.compare_bars(items, "images/cmp.png", title)               # 线性对比条形
 """
 import os
 import matplotlib
@@ -45,12 +48,38 @@ FONT = _setup_font()
 # ---- 配色（与小红书层级图一致）---------------------------------------------
 INK = "#1F2329"
 SUB = "#8A8F99"
+GRID = "#EEF0F2"
+# 主题强调色序列（与 .claude/skills 设计预设对应，[0] 是默认青绿主色）
+PALETTE = ["#2F9488", "#6E5AA8", "#D98E3D", "#C25E70", "#3E6FA0", "#3DA35D", "#B0573A", "#7A6A55"]
 
 
 def _ensure_dir(path):
     d = os.path.dirname(os.path.abspath(path))
     if d:
         os.makedirs(d, exist_ok=True)
+
+
+def _vis_w(text):
+    """近似视觉宽度：全角记 1，半角记 0.55。"""
+    return sum(1.0 if ord(ch) > 0x2E80 else 0.55 for ch in str(text))
+
+
+def _draw_note(fig, note, w_px, dpi, x, y, fs):
+    """底部注释统一绘制：按画布宽度自动折行（最多两行），避免长口径说明溢出。"""
+    text = "注：" + note
+    limit = (w_px - 2 * x * w_px) / (fs / 72 * dpi)  # 每行可容纳的全角字数
+    if _vis_w(text) > limit:
+        lines, cur, acc = [], "", 0.0
+        for ch in text:
+            cw = 1.0 if ord(ch) > 0x2E80 else 0.55
+            if acc + cw > limit and not lines:
+                lines.append(cur)
+                cur, acc = "", 0.0
+            cur += ch
+            acc += cw
+        lines.append(cur)
+        text = "\n".join(lines[:2])
+    fig.text(x, y, text, va="bottom", fontsize=fs, color=SUB)
 
 
 def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 1180)):
@@ -121,7 +150,7 @@ def waffle(tiers, out, title, subtitle="", note="", cols=50, rows=50, px=(1080, 
                  va="center", ha="right", fontsize=16.5, fontweight="bold", color=pc)
 
     if note:
-        fig.text(0.07, 0.025, "注：" + note, va="bottom", fontsize=12, color=SUB)
+        _draw_note(fig, note, w, dpi, x=0.07, y=0.025, fs=12)
 
     _ensure_dir(out)
     fig.savefig(out, dpi=dpi, facecolor="white")
@@ -163,7 +192,164 @@ def tiers_bar(tiers, out, title, subtitle="", note="", px=(1080, 840)):
                 fontweight="bold", color=INK)
 
     if note:
-        fig.text(0.06, 0.03, "注：" + note, va="bottom", fontsize=10.5, color=SUB)
+        _draw_note(fig, note, w, dpi, x=0.06, y=0.03, fs=10.5)
+    _ensure_dir(out)
+    fig.savefig(out, dpi=dpi, facecolor="white")
+    plt.close(fig)
+    return out
+
+
+def donut(parts, out, title, subtitle="", note="", center="", px=(1080, 1080)):
+    """占比环形图：份额/构成一目了然，中心可放一句话结论。
+
+    parts: [{'label','pct','color'(可选),'sub'(可选，图例里的小字补充)}...]
+    center: 中心文案，"大字\\n小字" 用换行拆两行；缺省取最大份额 "pct%\\nlabel"。
+    """
+    w, h = px
+    dpi = 160
+    fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
+    fig.patch.set_facecolor("white")
+    fig.text(0.5, 0.965, title, ha="center", va="top",
+             fontsize=30, fontweight="bold", color=INK)
+    if subtitle:
+        fig.text(0.5, 0.898, subtitle, ha="center", va="top", fontsize=13, color=SUB)
+
+    cols = [p.get("color") or PALETTE[i % len(PALETTE)] for i, p in enumerate(parts)]
+    vals = [p["pct"] for p in parts]
+    ax = fig.add_axes([0.16, 0.335, 0.68, 0.55])
+    ax.pie(vals, colors=cols, startangle=90, counterclock=False,
+           wedgeprops={"width": 0.34, "edgecolor": "white", "linewidth": 3})
+    ax.set_aspect("equal")
+
+    if not center:
+        top = max(parts, key=lambda p: p["pct"])
+        center = f"{top.get('pct_label', str(top['pct']) + '%')}\n{top['label']}"
+    lines = center.split("\n")
+    ax.text(0, 0.10, lines[0], ha="center", va="center",
+            fontsize=34, fontweight="bold", color=INK)
+    if len(lines) > 1:
+        ax.text(0, -0.22, lines[1], ha="center", va="center", fontsize=14, color=SUB)
+
+    # 图例：色块 + 标签(+小字) + 百分比右对齐，与 waffle 图例同一套版式
+    n = len(parts)
+    y0 = 0.275
+    dy = min(0.062, (y0 - 0.06) / max(1, n - 1) if n > 1 else 0.062)
+    for k, (p, c) in enumerate(zip(parts, cols)):
+        y = y0 - k * dy
+        fig.patches.append(plt.Rectangle((0.10, y - 0.014), 0.030, 0.027,
+                                         transform=fig.transFigure,
+                                         facecolor=c, edgecolor="none", clip_on=False))
+        label = p["label"] + (f"  ·  {p['sub']}" if p.get("sub") else "")
+        fig.text(0.145, y, label, va="center", fontsize=15.5,
+                 fontweight="bold", color=INK)
+        fig.text(0.90, y, p.get("pct_label", f"{p['pct']}%"), va="center", ha="right",
+                 fontsize=15.5, fontweight="bold", color=c)
+
+    if note:
+        _draw_note(fig, note, w, dpi, x=0.07, y=0.022, fs=11.5)
+    _ensure_dir(out)
+    fig.savefig(out, dpi=dpi, facecolor="white")
+    plt.close(fig)
+    return out
+
+
+def trend(series, out, title, xlabels, subtitle="", note="", ylabel="", px=(1080, 840)):
+    """趋势折线图：变化与拐点。末点自动标注数值，多条线时右端标线名。
+
+    series: [{'label','values','color'(可选),'unit'(可选，末点标注后缀)}...]
+    xlabels: 横轴刻度标签（与 values 等长）
+    """
+    w, h = px
+    dpi = 160
+    fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
+    fig.patch.set_facecolor("white")
+    fig.text(0.5, 0.955, title, ha="center", va="top",
+             fontsize=29, fontweight="bold", color=INK)
+    if subtitle:
+        fig.text(0.5, 0.862, subtitle, ha="center", va="top", fontsize=13.5, color=SUB)
+
+    # 右侧要放"末值/线名"标注，按最长标注自适应留边距（CJK 按全角宽估算），避免出图被裁
+    def _est_w(t):
+        return sum(1.0 if ord(ch) > 0x2E80 else 0.55 for ch in str(t))
+    longest = max([_est_w(f"{s['values'][-1]}{s.get('unit', '')}") for s in series] +
+                  ([_est_w(s["label"]) for s in series] if len(series) > 1 else [0]))
+    char_px = 15 / 72 * dpi                      # fontsize 15 的单个全角字宽
+    margin = min(0.30, max(0.10, (14 + longest * char_px + 14) / w))
+    ax = fig.add_axes([0.10, 0.15, 0.90 - 0.10 - margin, 0.62])
+    xs = range(len(xlabels))
+    for i, s in enumerate(series):
+        c = s.get("color") or PALETTE[i % len(PALETTE)]
+        ax.plot(list(xs), s["values"], color=c, linewidth=3.2,
+                marker="o", markersize=7, markerfacecolor="white",
+                markeredgewidth=2.4, markeredgecolor=c, zorder=3, clip_on=False)
+        last = s["values"][-1]
+        ax.annotate(f"{last}{s.get('unit', '')}",
+                    xy=(len(xlabels) - 1, last), xytext=(10, 0),
+                    textcoords="offset points", va="center",
+                    fontsize=15, fontweight="bold", color=c,
+                    annotation_clip=False)
+        if len(series) > 1:
+            ax.annotate(s["label"], xy=(len(xlabels) - 1, last), xytext=(10, 18),
+                        textcoords="offset points", va="center",
+                        fontsize=11, color=SUB, annotation_clip=False)
+
+    ax.set_xticks(list(xs))
+    ax.set_xticklabels(xlabels, fontsize=12, color=SUB)
+    ax.tick_params(axis="y", labelsize=11, colors=SUB, length=0)
+    ax.tick_params(axis="x", length=0)
+    for sname in ("top", "right", "left"):
+        ax.spines[sname].set_visible(False)
+    ax.spines["bottom"].set_color("#E6E8EB")
+    ax.grid(axis="y", color=GRID, zorder=0)
+    ax.margins(x=0.03)
+    if ylabel:
+        fig.text(0.10, 0.80, ylabel, fontsize=12, color=SUB)
+
+    if note:
+        _draw_note(fig, note, w, dpi, x=0.06, y=0.03, fs=10.5)
+    _ensure_dir(out)
+    fig.savefig(out, dpi=dpi, facecolor="white")
+    plt.close(fig)
+    return out
+
+
+def compare_bars(items, out, title, subtitle="", note="", unit="", px=(1080, 840)):
+    """对比条形图（线性刻度）：少量条目的直观大小对比，条端标数值。
+
+    items: [{'label','value','text'(可选，覆盖数值标注),'color'(可选)}...]，2–6 条最佳。
+    量级跨度特别大（>100 倍）时改用 tiers_bar（对数刻度）。
+    """
+    w, h = px
+    dpi = 160
+    fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
+    fig.patch.set_facecolor("white")
+    fig.text(0.5, 0.955, title, ha="center", va="top",
+             fontsize=29, fontweight="bold", color=INK)
+    if subtitle:
+        fig.text(0.5, 0.862, subtitle, ha="center", va="top", fontsize=13.5, color=SUB)
+
+    labels = [it["label"] for it in items][::-1]
+    vals = [it["value"] for it in items][::-1]
+    cols = [it.get("color") or PALETTE[i % len(PALETTE)]
+            for i, it in enumerate(items)][::-1]
+    texts = [it.get("text", f"{it['value']}{unit}") for it in items][::-1]
+
+    ax = fig.add_axes([0.26, 0.13, 0.62, 0.66])
+    y = range(len(labels))
+    ax.barh(list(y), vals, color=cols, height=0.58, zorder=3)
+    ax.set_yticks(list(y))
+    ax.set_yticklabels(labels, fontsize=14, color=INK)
+    ax.tick_params(axis="y", length=0)
+    ax.set_xticks([])
+    for sname in ("top", "right", "left", "bottom"):
+        ax.spines[sname].set_visible(False)
+    ax.set_xlim(0, max(vals) * 1.22)
+    for i, (v, t) in enumerate(zip(vals, texts)):
+        ax.text(v + max(vals) * 0.025, i, t, va="center",
+                fontsize=14, fontweight="bold", color=INK)
+
+    if note:
+        _draw_note(fig, note, w, dpi, x=0.06, y=0.03, fs=10.5)
     _ensure_dir(out)
     fig.savefig(out, dpi=dpi, facecolor="white")
     plt.close(fig)

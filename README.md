@@ -1,8 +1,22 @@
 # 小红书图文生成器
 
 把一段长文（支持 Markdown）自动排版成小红书风格的封面图 + 内容长图（1080×1440，小红书推荐 3:4），
-支持配色 / 主色调色板 / 10 种字体（标题与正文分开）/ 6 种底纹 / 3 种封面版式（卡片·全屏·融入）/
+支持 16 套配色 / 主色调色板 / 10 种字体（标题与正文分开）/ 11 种底纹 / 3 种封面版式（卡片·全屏·融入）/
 20 张内置科技风封面图 / 自定义上传，一键导出每张高清 PNG。
+
+## 用 Claude Code 一句话出图文（推荐）
+
+本项目内置**小红书 Skills 家族**（[`.claude/skills/`](.claude/skills/README.md)），
+在项目目录里打开 Claude Code，直接说：
+
+- "帮我做一篇关于××的小红书" → `xhs-post` 一条龙：文案 + 数据图表 + 精美卡片 + 发布文案
+- "给这篇笔记写个标题/文案" → `xhs-copy` 纯文案
+- "把这组数据做成配图" → `xhs-charts` 风格统一的信息图
+
+产出自动按日期归档到 `content/`。设计风格由
+[风格预设库](.claude/skills/xhs-post/references/design-presets.md) 保证：10 套按内容类型
+调好的「主题×字体×底纹×封面」组合，开箱即精美。后续新增的小红书技能也统一放
+`.claude/skills/`（约定见其 README）。
 
 ## 本地运行
 
@@ -48,12 +62,18 @@ https://shodan1q.github.io/<仓库名>/
 
 ## 目录结构
 ```
-index.html                 # 入口（静态页面）
+index.html                 # 入口（静态页面，也是无头导出的渲染引擎）
 support.js                 # 运行时（必须与 index.html 同目录）
+.claude/skills/            # 小红书 Skills 家族·本地完整版（xhs-post / xhs-copy / xhs-charts …）
+redskill/                  # RedSkill 市场上传包（纯 Markdown 版，完整体验即本仓库）
 covers/                    # 20 张内置封面图 photo-01.jpg … photo-20.jpg
-pipeline/                  # 内容生产流水线（Python）
-content/                   # 按日期归档的每篇内容（长文 / 概述 / 图片）
+pipeline/                  # 内容生产流水线（Python：图表库 / 无头导出 / 归档编排）
+content/                   # 按日期归档的每篇内容（长文 / 概述 / meta / 图片）
+uploads/                   # 自备封面图等上传素材
 ```
+
+> 合规说明：本项目所有 skills **只生产内容，不做任何自动发布**——无头浏览器仅用于渲染
+> 本地 `index.html` 出图，与小红书平台零交互；AI 生成内容发布时请按平台规定勾选标识。
 
 ## 内容生产流水线（Python + Jupyter）
 

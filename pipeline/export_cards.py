@@ -86,6 +86,14 @@ def export(content_dir):
             print(f"  ✓ card-{i+1:02d}.png")
         browser.close()
     httpd.shutdown()
+    # 清理上次导出残留的多余卡片（张数变少时，避免交付过期卡）
+    import glob
+    import re
+    for old in glob.glob(os.path.join(out_dir, "card-*.png")):
+        m = re.fullmatch(r"card-(\d+)\.png", os.path.basename(old))
+        if m and int(m.group(1)) > n:
+            os.remove(old)
+            print(f"  ✗ 移除过期卡片 {os.path.basename(old)}")
     print(f"完成：{len(saved)} 张卡片 → {out_dir}")
     return saved
 
