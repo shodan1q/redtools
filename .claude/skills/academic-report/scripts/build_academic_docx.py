@@ -184,27 +184,53 @@ def _linkify(paragraph, valid):
         el.getparent().remove(el)
 
 
-def _build_cover(anchor, title, subtitle, author):
-    """在正文前插入独立封面页；正文首段设 page_break_before 保证封面独占一页。"""
-    def spacer(n=1):
-        for _ in range(n):
-            anchor.insert_paragraph_before()
+def _build_cover(anchor, title, subtitle, author, fields=None):
+    """在正文前插入独立学位论文封面页；正文首段设 page_break_before 保证封面独占一页。
 
-    def centered(text, cjk, lat, size, bold=False, color=None):
-        p = anchor.insert_paragraph_before()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = p.add_run(text)
-        _run_font(r, cjk, lat, size, bold, color)
+    fields（均可选）：school 学校 / degree 论文类型 / student_id 学号 /
+    major 专业 / advisor 指导教师 / date 完成日期。给了才显示。
+    """
+    fields = fields or {}
+
+    def _tight(p):                                        # 清零段前后间距，间距只由空行控制
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(0)
         return p
 
-    spacer(6)
-    centered(title, HEAD_CJK, BODY_LAT, 24, bold=True)
+    def spacer(n=1):
+        for _ in range(n):
+            _tight(anchor.insert_paragraph_before())
+
+    def centered(text, cjk, lat, size, bold=False, color=None):
+        p = _tight(anchor.insert_paragraph_before())
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        _run_font(p.add_run(text), cjk, lat, size, bold, color)
+        return p
+
+    def pad4(lab):                                        # 标签补足 4 个全角字宽，冒号对齐
+        return lab if len(lab) >= 4 else lab[0] + "　" * (4 - len(lab)) + lab[1:]
+
+    def info(label, value):
+        centered(f"{pad4(label)}：{value}", BODY_CJK, BODY_LAT, 14)
+
+    grey = RGBColor(0x55, 0x55, 0x55)
+    if fields.get("school"):
+        spacer(1)
+        centered(fields["school"], HEAD_CJK, BODY_LAT, 22, bold=True)
+    if fields.get("degree"):
+        spacer(1)
+        centered(fields["degree"], BODY_CJK, BODY_LAT, 16)
+    spacer(3 if (fields.get("school") or fields.get("degree")) else 6)
+    centered(title, HEAD_CJK, BODY_LAT, 26, bold=True)
     if subtitle:
         spacer(1)
-        centered(subtitle, BODY_CJK, BODY_LAT, 15, color=RGBColor(0x55, 0x55, 0x55))
-    spacer(10)
-    if author:
-        centered(author, BODY_CJK, BODY_LAT, 13)
+        centered(subtitle, BODY_CJK, BODY_LAT, 15, color=grey)
+    spacer(4)
+    for lab, val in (("作者", author), ("学号", fields.get("student_id")),
+                     ("专业", fields.get("major")), ("指导教师", fields.get("advisor")),
+                     ("完成日期", fields.get("date"))):
+        if val:
+            info(lab, val)
     anchor.paragraph_format.page_break_before = True     # 正文另起一页
 
 
@@ -260,7 +286,7 @@ def add_header_footer(doc, header_text=None, page_numbers=False):
 
 
 def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=None,
-                   header=None, page_numbers=False):
+                   header=None, page_numbers=False, cover_fields=None):
     doc = Document(path)
 
     sec = doc.sections[0]                                  # A4 + 学位论文页边距
@@ -379,7 +405,7 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
             three += 1
 
     if title and doc.paragraphs:
-        _build_cover(doc.paragraphs[0], title, subtitle, author)
+        _build_cover(doc.paragraphs[0], title, subtitle, author, cover_fields)
 
     add_header_footer(doc, header, page_numbers)          # 页眉标题 + 页脚页码（封面除外）
 
@@ -425,6 +451,13 @@ def main(argv):
     ap.add_argument("--title"); ap.add_argument("--subtitle"); ap.add_argument("--author")
     ap.add_argument("--header", help="页眉文字（居中+下划线，封面首页不显示）")
     ap.add_argument("--page-numbers", action="store_true", help="页脚居中页码（封面首页不显示）")
+    # 学位论文封面可选栏（给了才显示）
+    ap.add_argument("--school", help="封面顶部学校名")
+    ap.add_argument("--degree", help="论文类型，如「硕士学位论文」")
+    ap.add_argument("--student-id", help="学号")
+    ap.add_argument("--major", help="专业")
+    ap.add_argument("--advisor", help="指导教师")
+    ap.add_argument("--date", help="完成日期")
     ap.add_argument("--line-spacing", type=float, default=1.5)
     ap.add_argument("--render", action="store_true", help="转 PDF 便于核对（需 LibreOffice）")
     a = ap.parse_args(argv)
@@ -439,8 +472,10 @@ def main(argv):
     else:
         sys.exit("只支持 .md 或 .docx")
 
+    cover_fields = {"school": a.school, "degree": a.degree, "student_id": a.student_id,
+                    "major": a.major, "advisor": a.advisor, "date": a.date}
     st = style_academic(out, a.line_spacing, a.title, a.subtitle, a.author,
-                        a.header, a.page_numbers)
+                        a.header, a.page_numbers, cover_fields)
     print("✓ 规范学术论文已生成")
     print(f"  三线表 {st['three_line']} · 图片 {st['images']} · 题注 {st['captions']} · "
           f"摘要标题 {st['abstract_titles']} · 首行缩进段 {st['indented']} · 标题 {st['headings']}")
