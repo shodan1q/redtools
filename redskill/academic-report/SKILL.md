@@ -1,6 +1,6 @@
 ---
 name: academic-report
-description: 发表级学术报告生成器：文献综述 / 课程论文 / 实验报告 / 博士硕士学位论文，从结构化写作到一键导出规范 Word（.docx）。含可运行 Python 脚本——build_academic_docx.py 产出中文学术规范排版（A4/封面/目录/中英文摘要/首行缩进/三线表/图表编号/悬挂缩进参考文献，遵 GB/T 7713.1），make_figure.py 出 300dpi 发表级插图（图表规则移植自 figure-style：结论式标题、焦点色主导、小样本点+中位数、折线末端直标、渲染自检）。用户要「写文献综述」「课程论文」「实验报告」「学位/毕业论文」「生成学术报告 Word」「把材料整理成规范论文」时用。帮你把真实材料组织成规范初稿并导出成品，不代查文献、不编造数据。
+description: 发表级学术报告生成器：文献综述 / 课程论文 / 实验报告 / 博士硕士学位论文，从结构化写作到一键导出规范 Word（.docx）。含可运行 Python 脚本——build_academic_docx.py 产出中文学术规范排版（A4/独立封面页/中英文摘要与关键词/首行缩进/三线表/图表编号题注/真·脚注角注/悬挂缩进参考文献，遵 GB/T 7713.1、GB/T 7714），make_figure.py 出 300dpi 发表级插图（图表规则移植自 figure-style：结论式标题、焦点色主导、小样本点+中位数、折线末端直标、渲染自检）。用户要「写文献综述」「课程论文」「实验报告」「学位/毕业论文」「生成学术报告 Word」「把材料整理成规范论文」时用。帮你把真实材料组织成规范初稿并导出成品，不代查文献、不编造数据。
 ---
 
 # 发表级学术报告
@@ -15,7 +15,7 @@ description: 发表级学术报告生成器：文献综述 / 课程论文 / 实�
 academic-report/
 ├── SKILL.md                     ← 本文件（工作流）
 ├── scripts/
-│   ├── build_academic_docx.py   ← Markdown → 发表级 .docx（封面/目录/三线表/首行缩进/题注）
+│   ├── build_academic_docx.py   ← Markdown → 发表级 .docx（封面/摘要/三线表/首行缩进/题注/脚注）
 │   └── make_figure.py           ← 300dpi 学术插图（结论式标题、去冗余边框）
 └── references/
     ├── structure.md             ← 三种报告骨架 + 分节写作要点
@@ -35,8 +35,16 @@ academic-report/
 按这个约定写正文（让脚本排版更准）：
 
 ```markdown
-# 一、引言
-正文段落……（脚本会自动首行缩进 2 字符）
+摘要
+（摘要正文 200–600 字，脚本自动居中标题 + 首行缩进）
+关键词：词1；词2；词3
+
+Abstract
+(English abstract)
+Keywords: w1; w2; w3
+
+# 1 引言
+正文段落……（脚本自动首行缩进 2 字符）。需要角注处用 [^1] 标注[^1]。
 
 表1 参数窗口
 | 参数 | 取值 | 依据 |
@@ -45,10 +53,14 @@ academic-report/
 
 ![](fig1.png)
 图1 降温曲线呈指数衰减（示例数据）
+
+[^1]: 这是角注内容——pandoc 会转成真·Word 页脚注，带分隔线、小五号。
 ```
 
-摘要段以「摘要」开头。引用按 [references/citations.md](references/citations.md) 的格式，
-**具体文献用真实读过的替换、逐条核实**——AI 不代查、不编造 DOI。
+- 「摘要 / Abstract」单独成行 → 居中黑体小三标题；「关键词：/ Keywords:」开头 → 标签加粗。
+- 角注用 pandoc 脚注语法 `[^n]`，文末 `[^n]: 注文`，生成**真·Word 脚注**。
+- 引用按 [references/citations.md](references/citations.md)（GB/T 7714）格式，
+  **具体文献用真实读过的替换、逐条核实**——AI 不代查、不编造 DOI。
 
 ### 3. 配图（有数据就配，标准移植自 figure-style）
 
@@ -74,11 +86,12 @@ mf.save(fig, "fig1.png")
 
 ```bash
 python3 scripts/build_academic_docx.py report.md -o report.docx \
-    --title "标题" --subtitle "副标题" --author "姓名 / 单位" --toc --line-spacing 1.5
+    --title "标题" --subtitle "副标题" --author "姓名 / 单位" --line-spacing 1.5 --render
 ```
 
-自动套：封面、目录域、正文宋体小四·1.5 倍行距·**首行缩进 2 字符**、标题黑体分级、
-数据表→**三线表**、图/表**居中带编号题注**、参考文献可悬挂缩进。**内容一字不改，只排版。**
+自动套：**独立封面页**、中英文摘要与关键词样式、正文宋体小四·1.5 倍行距·**首行缩进 2 字符**、
+标题黑体分级、数据表→**三线表**、图/表**居中编号题注**、`[^n]`→**真·脚注**、参考文献**悬挂缩进**。
+`--render` 调 LibreOffice 转 PDF 便于逐页核对（改完必看渲染，别只信结构）。**内容一字不改，只排版。**
 
 ### 5. 质检
 
