@@ -208,7 +208,59 @@ def _build_cover(anchor, title, subtitle, author):
     anchor.paragraph_format.page_break_before = True     # 正文另起一页
 
 
-def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=None):
+def _para_bottom_border(p):
+    """给段落加下边框——页眉横线。"""
+    pPr = p._p.get_or_add_pPr()
+    pbdr = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "808080")
+    pbdr.append(bottom)
+    pPr.append(pbdr)
+
+
+def _add_page_field(paragraph):
+    """插入 PAGE 域（当前页码），带 separate + 占位结果，跨阅读器更稳。"""
+    run = paragraph.add_run()
+    for tag, attrs, txt in [
+        ("w:fldChar", {"w:fldCharType": "begin"}, None),
+        ("w:instrText", {"xml:space": "preserve"}, " PAGE "),
+        ("w:fldChar", {"w:fldCharType": "separate"}, None),
+        ("w:t", {}, "1"),
+        ("w:fldChar", {"w:fldCharType": "end"}, None),
+    ]:
+        el = OxmlElement(tag)
+        for k, v in attrs.items():
+            el.set(qn(k), v)
+        if txt:
+            el.text = txt
+        run._element.append(el)
+    return run
+
+
+def add_header_footer(doc, header_text=None, page_numbers=False):
+    """页眉（居中标题+下划线）与页脚（居中页码）；封面首页不显示。"""
+    if not (header_text or page_numbers):
+        return
+    sec = doc.sections[0]
+    sec.different_first_page_header_footer = True         # 封面首页留白
+    if header_text:
+        hp = sec.header.paragraphs[0]
+        hp.text = ""
+        hp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        _run_font(hp.add_run(header_text), BODY_CJK, BODY_LAT, 9)   # 页眉宋体小五
+        _para_bottom_border(hp)
+    if page_numbers:
+        fp = sec.footer.paragraphs[0]
+        fp.text = ""
+        fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        _run_font(_add_page_field(fp), BODY_CJK, BODY_LAT, CAPTION_PT)
+
+
+def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=None,
+                   header=None, page_numbers=False):
     doc = Document(path)
 
     sec = doc.sections[0]                                  # A4 + 学位论文页边距
@@ -329,10 +381,13 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
     if title and doc.paragraphs:
         _build_cover(doc.paragraphs[0], title, subtitle, author)
 
+    add_header_footer(doc, header, page_numbers)          # 页眉标题 + 页脚页码（封面除外）
+
     doc.save(path)
     return {"tables": len(doc.tables), "three_line": three, "images": len(doc.inline_shapes),
             "indented": n_ind, "captions": n_cap, "abstract_titles": n_abs,
             "ref_bookmarks": len(valid_ids), "cite_links": links,
+            "header": bool(header), "page_numbers": page_numbers,
             "headings": sum(1 for p in doc.paragraphs if p.style.name.startswith("Heading"))}
 
 
@@ -368,6 +423,8 @@ def main(argv):
     ap.add_argument("input")
     ap.add_argument("-o", "--output")
     ap.add_argument("--title"); ap.add_argument("--subtitle"); ap.add_argument("--author")
+    ap.add_argument("--header", help="页眉文字（居中+下划线，封面首页不显示）")
+    ap.add_argument("--page-numbers", action="store_true", help="页脚居中页码（封面首页不显示）")
     ap.add_argument("--line-spacing", type=float, default=1.5)
     ap.add_argument("--render", action="store_true", help="转 PDF 便于核对（需 LibreOffice）")
     a = ap.parse_args(argv)
@@ -382,11 +439,13 @@ def main(argv):
     else:
         sys.exit("只支持 .md 或 .docx")
 
-    st = style_academic(out, a.line_spacing, a.title, a.subtitle, a.author)
+    st = style_academic(out, a.line_spacing, a.title, a.subtitle, a.author,
+                        a.header, a.page_numbers)
     print("✓ 规范学术论文已生成")
     print(f"  三线表 {st['three_line']} · 图片 {st['images']} · 题注 {st['captions']} · "
           f"摘要标题 {st['abstract_titles']} · 首行缩进段 {st['indented']} · 标题 {st['headings']}")
     print(f"  参考文献书签 {st['ref_bookmarks']} · 正文可点击引用 {st['cite_links']} 处")
+    print(f"  页眉 {'✓「'+a.header+'」' if st['header'] else '—'} · 页脚页码 {'✓' if st['page_numbers'] else '—'}")
     print(f"  → {out}")
     if a.render:
         pdf = render_pdf(out)
