@@ -143,7 +143,17 @@ def _mk_run(text, rpr):
 def _mk_link(anchor, text, rpr):
     hl = OxmlElement("w:hyperlink")
     hl.set(qn("w:anchor"), anchor)                    # 内部锚点，无需关系 id
-    hl.append(_mk_run(text, rpr))
+    r = OxmlElement("w:r")
+    rp = OxmlElement("w:rPr")                          # 引用标号做成上标（GB/T 7714 顺序编码制）
+    va = OxmlElement("w:vertAlign")
+    va.set(qn("w:val"), "superscript")
+    rp.append(va)
+    r.append(rp)
+    t = OxmlElement("w:t")
+    t.set(qn("xml:space"), "preserve")
+    t.text = text
+    r.append(t)
+    hl.append(r)
     return hl
 
 
