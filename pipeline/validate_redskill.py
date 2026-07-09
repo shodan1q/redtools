@@ -1,15 +1,16 @@
 """
 validate_redskill —— RedSkill（小红书技能市场）上传就绪校验器。
 
-把 RedSkill 上传/审核的硬规则固化成可复跑的检查，逐个扫描 redskill/ 下的技能包，
-明确报告每个能不能上传、卡在哪。以后每加一个市场版 skill，跑一遍就知道过不过。
+把 RedSkill 上传/审核的硬规则固化成可复跑的检查，逐个扫描 redskill/ 下的技能包。
 
-规则依据（2026-07 内测）：
-- 只收 Markdown/TXT；独立的 .py/.yaml/.json 等脚本/配置文件会被过滤 → 技能包必须纯 .md
+规则依据（2026-07，以创作平台上传页为准）：
+- 上传含 SKILL.md 的文件夹，**支持 .md/.txt/.html/.css/.js/.py/.json/.xml 等代码与配置文件**
+  （脚本不再被过滤——完整 skill 可带可运行的 Python 等脚本）
+- 单文件 ≤ 10MB，技能包总大小 ≤ 30MB
 - frontmatter 必备 name + description；name 仅小写字母/数字/连字符，≤64 字，
   禁下划线与保留词（anthropic/claude）
-- 站内正文严禁外链导流；GitHub 等来源填在上传时的「来源」字段，不进正文
-- 敏感/导流词（微信/加微/私信/公众号/二维码…）命中即高风险
+- 站内正文避免外链导流（GitHub 等来源填上传时的「来源」字段更稳）→ 提示，非阻断
+- 敏感/导流词命中 → 提示
 
 用法：
     python3 pipeline/validate_redskill.py            # 校验 redskill/ 下全部技能包
@@ -26,7 +27,11 @@ REDSKILL_DIR = os.path.join(ROOT, "redskill")
 NAME_RE = re.compile(r"^[a-z0-9-]{1,64}$")
 RESERVED = ("anthropic", "claude")
 URL_RE = re.compile(r"https?://[^\s)>\"']+")
-# 导流/敏感词：命中即人工复核高风险
+ALLOWED_EXT = {".md", ".txt", ".html", ".css", ".js", ".py", ".json", ".xml",
+               ".yaml", ".yml", ".csv", ".toml", ".ini", ".png", ".jpg",
+               ".jpeg", ".svg", ".gif"}
+MAX_FILE = 10 * 1024 * 1024
+MAX_TOTAL = 30 * 1024 * 1024
 DIVERT_WORDS = ["微信", "加微", "vx", "威信", "私信我", "私聊", "公众号",
                 "二维码", "扫码", "抖音", "b站", "淘宝", "闲鱼", "qq群", "微信群"]
 
@@ -48,11 +53,23 @@ def validate_skill(skill_dir):
     errors, warnings = [], []
     name_expected = os.path.basename(skill_dir.rstrip("/"))
 
-    files = [f for f in os.listdir(skill_dir)
-             if os.path.isfile(os.path.join(skill_dir, f))]
-    non_md = [f for f in files if not f.lower().endswith((".md", ".txt"))]
-    if non_md:
-        errors.append(f"含非 Markdown 文件（会被平台过滤）：{', '.join(non_md)}")
+    # 递归扫描：类型 / 单文件与总大小
+    total = 0
+    for root, dirs, files in os.walk(skill_dir):
+        dirs[:] = [d for d in dirs if d not in ("__pycache__", ".git")]
+        for f in files:
+            if f == ".DS_Store":
+                continue
+            fp = os.path.join(root, f)
+            sz = os.path.getsize(fp)
+            total += sz
+            if sz > MAX_FILE:
+                errors.append(f"单文件超 10MB：{os.path.relpath(fp, skill_dir)}（{sz // 1024 // 1024}MB）")
+            ext = os.path.splitext(f)[1].lower()
+            if ext and ext not in ALLOWED_EXT:
+                warnings.append(f"非常见文件类型 {os.path.relpath(fp, skill_dir)}，确认平台是否接受")
+    if total > MAX_TOTAL:
+        errors.append(f"技能包总大小超 30MB（{total // 1024 // 1024}MB）")
 
     skill_md = os.path.join(skill_dir, "SKILL.md")
     if not os.path.exists(skill_md):
@@ -82,9 +99,9 @@ def validate_skill(skill_dir):
     elif len(desc) < 20:
         warnings.append("description 过短，触发准确度可能低")
 
-    # 正文外链 = 导流高风险（GitHub 等来源应填「来源」字段，不进正文）
-    for url in URL_RE.findall(body):
-        errors.append(f"正文含外链（导流风险，移到上传「来源」字段）：{url}")
+    # 正文外链 / 导流词 → 提示（非阻断；来源建议填「来源」字段）
+    for url in set(URL_RE.findall(body)):
+        warnings.append(f"正文含外链 {url}（建议移到上传「来源」字段，避免站内导流判定）")
     for w in DIVERT_WORDS:
         if w in body:
             warnings.append(f"正文含疑似导流/敏感词「{w}」，建议复核")
