@@ -172,13 +172,18 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
             pass
 
     n_ind = n_cap = n_abs = 0
-    in_refs = False
+    in_refs = first_h1 = False
     for p in doc.paragraphs:
         name = p.style.name
         raw = p.text.strip()
         low = _norm(raw)
-        if name.startswith("Heading") or name == "Title":  # 标题：顺便记录是否进入参考文献段
+        if name.startswith("Heading") or name == "Title":  # 标题：分页 + 记录参考文献段
             in_refs = any(low == t or low.startswith(t) for t in REF_TITLES)
+            if in_refs:
+                p.paragraph_format.page_break_before = True     # 参考文献另起一页
+            elif name == "Heading 1" and not first_h1:
+                p.paragraph_format.page_break_before = True     # 正文首章另起一页
+                first_h1 = True
             continue
         if _has_image(p):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -191,13 +196,17 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
             continue
         if low in ABSTRACT_TITLES:                         # 摘要/Abstract：居中黑体小三
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            if low in ("abstract", "英文摘要"):             # 英文摘要另起一页
+                p.paragraph_format.page_break_before = True
             for r in p.runs:
                 _run_font(r, HEAD_CJK, BODY_LAT, 15, bold=True)
             p.paragraph_format.space_before = Pt(6)
             p.paragraph_format.space_after = Pt(6)
             n_abs += 1
             continue
-        if any(low.startswith(k) for k in KEYWORD_HEADS):  # 关键词：标签加粗、不缩进
+        if any(low.startswith(k) for k in KEYWORD_HEADS):  # 关键词：顶格、标签加粗
+            p.paragraph_format.first_line_indent = Pt(0)
+            p.paragraph_format.left_indent = Pt(0)
             for r in p.runs:
                 _run_font(r, BODY_CJK, BODY_LAT, BODY_PT)
             if p.runs:
