@@ -172,18 +172,15 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
             pass
 
     n_ind = n_cap = n_abs = 0
-    in_refs = first_h1 = False
+    in_refs = False
     for p in doc.paragraphs:
         name = p.style.name
         raw = p.text.strip()
         low = _norm(raw)
-        if name.startswith("Heading") or name == "Title":  # 标题：分页 + 记录参考文献段
+        if name.startswith("Heading") or name == "Title":  # 标题：每一章另起一页 + 记录参考文献段
             in_refs = any(low == t or low.startswith(t) for t in REF_TITLES)
-            if in_refs:
-                p.paragraph_format.page_break_before = True     # 参考文献另起一页
-            elif name == "Heading 1" and not first_h1:
-                p.paragraph_format.page_break_before = True     # 正文首章另起一页
-                first_h1 = True
+            if name == "Heading 1":
+                p.paragraph_format.page_break_before = True     # 每一章（含参考文献）另起一页
             continue
         if _has_image(p):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -212,9 +209,13 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
             if p.runs:
                 p.runs[0].font.bold = True
             continue
-        if in_refs and raw:                                # 参考文献：悬挂缩进、小五、不首行缩进
-            p.paragraph_format.left_indent = Pt(21)
-            p.paragraph_format.first_line_indent = Pt(-21)
+        if in_refs and raw:                                # 参考文献：悬挂缩进、小五、紧凑段距
+            rpf = p.paragraph_format
+            rpf.left_indent = Pt(21)
+            rpf.first_line_indent = Pt(-21)
+            rpf.space_before = Pt(0)
+            rpf.space_after = Pt(3)
+            rpf.line_spacing = 1.15
             for r in p.runs:
                 _run_font(r, BODY_CJK, BODY_LAT, CAPTION_PT)
             continue
