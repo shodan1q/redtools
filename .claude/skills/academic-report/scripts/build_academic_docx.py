@@ -19,6 +19,7 @@ Markdown 约定：
   摘要段落标题写 `摘要` / `Abstract`；关键词行以 `关键词：` / `Keywords:` 开头
 """
 import argparse
+import copy
 import os
 import re
 import shutil
@@ -112,6 +113,66 @@ def _norm(s):
     return s.strip().rstrip("：:").strip().lower()
 
 
+CITE_RE = re.compile(r"\[(\d{1,3})\]")
+
+
+def _add_bookmark_start(paragraph, name, bid):
+    """在段首打一个（零长）书签，作为 [n] 引用的跳转目标。"""
+    p = paragraph._p
+    start = OxmlElement("w:bookmarkStart")
+    start.set(qn("w:id"), str(bid))
+    start.set(qn("w:name"), name)
+    end = OxmlElement("w:bookmarkEnd")
+    end.set(qn("w:id"), str(bid))
+    pPr = p.find(qn("w:pPr"))
+    (pPr.addnext(start) if pPr is not None else p.insert(0, start))
+    start.addnext(end)
+
+
+def _mk_run(text, rpr):
+    r = OxmlElement("w:r")
+    if rpr is not None:
+        r.append(copy.deepcopy(rpr))
+    t = OxmlElement("w:t")
+    t.set(qn("xml:space"), "preserve")
+    t.text = text
+    r.append(t)
+    return r
+
+
+def _mk_link(anchor, text, rpr):
+    hl = OxmlElement("w:hyperlink")
+    hl.set(qn("w:anchor"), anchor)                    # 内部锚点，无需关系 id
+    hl.append(_mk_run(text, rpr))
+    return hl
+
+
+def _linkify(paragraph, valid):
+    """把段内 [n] 换成指向 ref{n} 书签的内部超链接（保留原字体、不变蓝）。"""
+    for run in list(paragraph.runs):
+        txt = run.text
+        if not txt or "[" not in txt:
+            continue
+        segs, last, hit = [], 0, False
+        for m in CITE_RE.finditer(txt):
+            if m.group(1) not in valid:
+                continue
+            hit = True
+            if m.start() > last:
+                segs.append(("t", txt[last:m.start()]))
+            segs.append(("l", m.group(0), "ref" + m.group(1)))
+            last = m.end()
+        if not hit:
+            continue
+        if last < len(txt):
+            segs.append(("t", txt[last:]))
+        rpr = run._element.find(qn("w:rPr"))
+        el = run._element
+        for s in segs:
+            el.addprevious(_mk_run(s[1], rpr) if s[0] == "t" else _mk_link(s[2], s[1], rpr))
+        el.getparent().remove(el)
+
+
 def _build_cover(anchor, title, subtitle, author):
     """在正文前插入独立封面页；正文首段设 page_break_before 保证封面独占一页。"""
     def spacer(n=1):
@@ -173,6 +234,7 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
 
     n_ind = n_cap = n_abs = 0
     in_refs = False
+    valid_ids, bmid = set(), 1
     for p in doc.paragraphs:
         name = p.style.name
         raw = p.text.strip()
@@ -210,6 +272,11 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
                 p.runs[0].font.bold = True
             continue
         if in_refs and raw:                                # 参考文献：悬挂缩进、小五、紧凑段距
+            m = CITE_RE.match(raw)                          # 给每条 [n] 打书签作跳转目标
+            if m:
+                _add_bookmark_start(p, "ref" + m.group(1), bmid)
+                bmid += 1
+                valid_ids.add(m.group(1))
             rpf = p.paragraph_format
             rpf.left_indent = Pt(21)
             rpf.first_line_indent = Pt(-21)
@@ -222,6 +289,19 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
         if name in BODY_STYLES and raw:                    # 正文首行缩进 2 字符
             p.paragraph_format.first_line_indent = Pt(BODY_PT * 2)
             n_ind += 1
+
+    links = 0                                              # 正文 [n] → 可点击跳转到参考文献
+    if valid_ids:
+        r2 = False
+        for p in doc.paragraphs:
+            nm, lw = p.style.name, _norm(p.text.strip())
+            if nm.startswith("Heading") or nm == "Title":
+                r2 = any(lw == t or lw.startswith(t) for t in REF_TITLES)
+                continue
+            if not r2 and p.text.strip():
+                before = len(p._p.findall(qn("w:hyperlink")))
+                _linkify(p, valid_ids)
+                links += len(p._p.findall(qn("w:hyperlink"))) - before
 
     three = 0
     for t in doc.tables:
@@ -237,6 +317,7 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
     doc.save(path)
     return {"tables": len(doc.tables), "three_line": three, "images": len(doc.inline_shapes),
             "indented": n_ind, "captions": n_cap, "abstract_titles": n_abs,
+            "ref_bookmarks": len(valid_ids), "cite_links": links,
             "headings": sum(1 for p in doc.paragraphs if p.style.name.startswith("Heading"))}
 
 
@@ -290,6 +371,7 @@ def main(argv):
     print("✓ 规范学术论文已生成")
     print(f"  三线表 {st['three_line']} · 图片 {st['images']} · 题注 {st['captions']} · "
           f"摘要标题 {st['abstract_titles']} · 首行缩进段 {st['indented']} · 标题 {st['headings']}")
+    print(f"  参考文献书签 {st['ref_bookmarks']} · 正文可点击引用 {st['cite_links']} 处")
     print(f"  → {out}")
     if a.render:
         pdf = render_pdf(out)
