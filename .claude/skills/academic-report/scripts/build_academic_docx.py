@@ -143,6 +143,7 @@ def _mk_run(text, rpr):
 def _mk_link(anchor, text, rpr):
     hl = OxmlElement("w:hyperlink")
     hl.set(qn("w:anchor"), anchor)                    # 内部锚点，无需关系 id
+    hl.set(qn("w:history"), "1")                      # Word/WPS 原生交叉引用都带，提升兼容
     r = OxmlElement("w:r")
     rp = OxmlElement("w:rPr")                          # 引用标号做成上标（GB/T 7714 顺序编码制）
     va = OxmlElement("w:vertAlign")
@@ -244,7 +245,11 @@ def style_academic(path, line_spacing=1.5, title=None, subtitle=None, author=Non
 
     n_ind = n_cap = n_abs = 0
     in_refs = False
-    valid_ids, bmid = set(), 1
+    # 书签 ID 必须避开 pandoc 已用的（标题目录书签）——ID 撞车会让 WPS 解析错乱、
+    # 点引用报“文件无法打开”。从现有最大 ID + 1 起编，彻底不冲突。
+    _used = [int(b.get(qn("w:id"))) for b in doc.element.iter(qn("w:bookmarkStart"))
+             if (b.get(qn("w:id")) or "").lstrip("-").isdigit()]
+    valid_ids, bmid = set(), (max(_used) + 1 if _used else 1000)
     for p in doc.paragraphs:
         name = p.style.name
         raw = p.text.strip()
