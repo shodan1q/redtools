@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 from docx import Document
-from docx.shared import Pt, RGBColor
+from docx.shared import Pt, RGBColor, Mm
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from docx.enum.text import WD_LINE_SPACING, WD_ALIGN_PARAGRAPH, WD_BREAK
@@ -151,6 +151,11 @@ def _build_cover(anchor, title, subtitle, author):
 def style_academic(path, line_spacing=1.5, title=None, subtitle=None,
                    author=None, toc=False):
     doc = Document(path)
+
+    sec = doc.sections[0]                                  # A4 + 学位论文页边距（GB/T 7713.1）
+    sec.page_width, sec.page_height = Mm(210), Mm(297)
+    sec.top_margin, sec.bottom_margin = Mm(25), Mm(25)
+    sec.left_margin, sec.right_margin = Mm(30), Mm(25)     # 左 30mm 留装订
 
     normal = doc.styles["Normal"]
     _set_cjk(normal, BODY_LAT, BODY_CJK, BODY_PT)

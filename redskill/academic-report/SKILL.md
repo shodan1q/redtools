@@ -1,6 +1,6 @@
 ---
 name: academic-report
-description: 发表级学术报告生成器：文献综述 / 课程论文 / 实验报告，从结构化写作到一键导出规范 Word（.docx）。含可运行 Python 脚本——build_academic_docx.py 产出中文学术规范排版（封面/目录/首行缩进/三线表/图表编号/悬挂缩进参考文献），make_figure.py 出 300dpi 发表级插图。用户要「写文献综述」「课程论文」「实验报告」「生成学术报告 Word」「把材料整理成规范论文」时用。帮你把真实材料组织成规范初稿并导出成品，不代查文献、不编造数据。
+description: 发表级学术报告生成器：文献综述 / 课程论文 / 实验报告 / 博士硕士学位论文，从结构化写作到一键导出规范 Word（.docx）。含可运行 Python 脚本——build_academic_docx.py 产出中文学术规范排版（A4/封面/目录/中英文摘要/首行缩进/三线表/图表编号/悬挂缩进参考文献，遵 GB/T 7713.1），make_figure.py 出 300dpi 发表级插图（图表规则移植自 figure-style：结论式标题、焦点色主导、小样本点+中位数、折线末端直标、渲染自检）。用户要「写文献综述」「课程论文」「实验报告」「学位/毕业论文」「生成学术报告 Word」「把材料整理成规范论文」时用。帮你把真实材料组织成规范初稿并导出成品，不代查文献、不编造数据。
 ---
 
 # 发表级学术报告
@@ -50,17 +50,25 @@ academic-report/
 摘要段以「摘要」开头。引用按 [references/citations.md](references/citations.md) 的格式，
 **具体文献用真实读过的替换、逐条核实**——AI 不代查、不编造 DOI。
 
-### 3. 配图（可选，有数据就配）
+### 3. 配图（有数据就配，标准移植自 figure-style）
 
-用 `make_figure.py`，图标题写**结论**不写变量名：
+用 `make_figure.py` 出 300dpi 发表级图。规则来自 Claude Science 的 figure-style：
+标题写**结论**、开放边框、焦点色主导其余灰化、折线末端直标、渲染后自检文字不重叠。
 
 ```python
 import sys; sys.path.insert(0, "scripts")
 import make_figure as mf
-ax = mf.new_ax("六周后差距拉开", "每周测验均分（模拟数据）")
-mf.line(ax, list(range(1,7)), {"坚持组":[55,58,64,71,76,83]}, xlabels=[f"第{i}周" for i in range(1,7)])
-mf.save(ax, "fig1.png")
+fig, ax = mf.new_figure("坚持组六周后明显领先", "每周测验均分 · 模拟数据")
+mf.line_series(ax, list(range(1,7)),
+               {"坚持组":[55,58,64,71,76,83], "对照组":[54,55,53,56,55,57]})   # 末端直标，无图例框
+ax.set_xticks(range(1,7)); ax.set_xticklabels([f"第{i}周" for i in range(1,7)])
+ax.set_ylabel("测验均分"); mf.goodness_arrow(ax, "越高越好")
+mf.save(fig, "fig1.png")
 ```
+
+**按数据形状选图型**：趋势→`line_series`；分组均值+原始点→`bar_with_points`
+（焦点组用 `focal_palette` 高亮、其余灰化）；**小样本 n≲10→`strip_with_median`**
+（点+中位数刻度，不要用条形）。图注写在图**下方**：`图1 …`。
 
 ### 4. 一键导出发表级 Word
 
