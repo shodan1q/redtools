@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .DS_Store
+
+# 用户私有项目的重制产物（含真实商业/工程/医疗内容），严禁提交到公开仓库
+examples/product-design-doc-demo/
