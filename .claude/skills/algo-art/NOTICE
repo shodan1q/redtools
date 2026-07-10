@@ -1,0 +1,5 @@
+本技能 algo-art 为独立中文实现，方法论（生成式算法美学、流场/波干涉/结晶/分形等思路）
+借鉴自 Anthropic 公开发布的 algorithmic-art 技能（Apache License 2.0）。
+
+代码（scripts/art.py）由 AgentOPC 用 numpy + Pillow 重新编写，非原技能代码的拷贝。
+算法美学方法论 © Anthropic, PBC，遵 Apache-2.0。
