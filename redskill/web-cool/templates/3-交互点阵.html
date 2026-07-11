@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>交互点阵</title>
+<style>
+  :root{--paper:#FAF9F5;--ink:#141413;--clay:#D97757;--mut:#6b6a63;}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--paper);
+    font-family:system-ui,"PingFang SC",sans-serif;}
+  .cap{position:fixed;left:min(6vw,56px);bottom:40px;z-index:2;pointer-events:none;}
+  .cap h2{margin:0;font-family:Georgia,"Songti SC",serif;font-weight:500;font-size:min(6vw,40px);
+    color:var(--ink);letter-spacing:.5px;line-height:1.15;}
+  .cap h2 em{font-style:normal;color:var(--clay);}
+  .cap p{margin:12px 0 0;font-size:13px;letter-spacing:3px;color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="cap"><h2>靠近，<em>点亮</em>秩序</h2><p>MOVE TO REVEAL · 交互点阵</p></div>
+<canvas id="c"></canvas>
+<script>
+const cv=document.getElementById('c'), x=cv.getContext('2d');
+let W,H,dots=[],mx=-1e4,my=-1e4,DPR=Math.min(devicePixelRatio,2);
+const GAP=38, R=170;
+function build(){
+  W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;
+  cv.style.width=W+'px';cv.style.height=H+'px';x.setTransform(DPR,0,0,DPR,0,0);
+  dots=[];
+  for(let gy=GAP;gy<H;gy+=GAP) for(let gx=GAP;gx<W;gx+=GAP) dots.push({x:gx,y:gy});
+}
+build();addEventListener('resize',build);
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+addEventListener('mouseleave',()=>{mx=my=-1e4;});
+(function loop(t){
+  x.clearRect(0,0,W,H);
+  for(const d of dots){
+    const dx=d.x-mx, dy=d.y-my, dist=Math.hypot(dx,dy);
+    const wave=1+0.35*Math.sin(t*0.0016+d.x*0.02+d.y*0.02);   // 环境微呼吸
+    let r=1.5*wave, ox=0, oy=0, clay=0;
+    if(dist<R){
+      const k=1-dist/R;
+      r=1.5+k*k*5;                       // 近鼠标放大
+      const push=k*10; ox=dx/(dist||1)*push; oy=dy/(dist||1)*push;   // 透镜外推
+      clay=k;
+    }
+    if(clay>0.02){ x.fillStyle=`rgba(217,119,87,${0.35+clay*0.65})`; }
+    else{ x.fillStyle='rgba(20,20,19,0.28)'; }
+    x.beginPath();x.arc(d.x+ox,d.y+oy,r,0,6.2832);x.fill();
+  }
+  requestAnimationFrame(loop);
+})(0);
+</script>
+</body>
+</html>

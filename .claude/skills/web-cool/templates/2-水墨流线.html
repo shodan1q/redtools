@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水墨流线</title>
+<style>
+  :root{--paper:#FAF9F5;--ink:#141413;--clay:#D97757;--mut:#6b6a63;}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--paper);
+    font-family:system-ui,"PingFang SC",sans-serif;}
+  .tag{position:fixed;top:36px;left:min(6vw,56px);z-index:2;}
+  .tag h2{margin:0;font-family:Georgia,"Songti SC",serif;font-weight:500;font-size:19px;color:var(--ink);letter-spacing:.5px;}
+  .tag p{margin:4px 0 0;font-size:12px;letter-spacing:4px;color:var(--clay);text-transform:uppercase;}
+  .foot{position:fixed;bottom:34px;left:min(6vw,56px);z-index:2;font-size:12px;letter-spacing:2px;color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="tag"><h2>生成 · 流</h2><p>Generative Field</p></div>
+<div class="foot">墨随场走 · 每一帧都不重复</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+let P=[], SC=0.0016, INK, CLAY, PAPER;
+function setup(){
+  createCanvas(windowWidth,windowHeight);
+  INK=color(20,20,19); CLAY=color(217,119,87); PAPER=color(250,249,245);
+  background(PAPER);
+}
+function spawn(n){
+  for(let i=0;i<n;i++) P.push({x:random(width),y:random(height),
+    life:random(150,520), clay:random()<0.08});
+}
+function draw(){
+  if(P.length===0 && width>1) spawn(Math.min(3200,Math.floor(width*height/560)));
+  if(P.length===0) return;
+  // 不回扫：墨纯累积成致密流场（约 15 秒长成一幅完整水墨，之后可刷新重生）
+  for(const p of P){
+    const a=noise(p.x*SC,p.y*SC)*TWO_PI*2.4;
+    const nx=p.x+Math.cos(a)*1.5, ny=p.y+Math.sin(a)*1.5;
+    stroke(p.clay?color(217,119,87,150):color(20,20,19,55));
+    strokeWeight(p.clay?1.3:0.85);
+    line(p.x,p.y,nx,ny);
+    p.x=nx; p.y=ny; p.life--;
+    if(p.life<0||p.x<0||p.x>width||p.y<0||p.y>height){
+      p.x=random(width);p.y=random(height);p.life=random(150,520);p.clay=random()<0.08;
+    }
+  }
+}
+function windowResized(){resizeCanvas(windowWidth,windowHeight);background(PAPER);P=[];}
+</script>
+</body>
+</html>
